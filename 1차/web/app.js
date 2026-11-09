@@ -8,7 +8,7 @@ const won = (value) => typeof value === 'number' && Number.isFinite(value) ? `${
 const hasKrwMae = (metric) => typeof metric.mae_krw === 'number' && Number.isFinite(metric.mae_krw);
 const maeText = (metric) => hasKrwMae(metric) ? `${number(metric.mae_krw,2)}원` : typeof metric.mae === 'number' && Number.isFinite(metric.mae) ? `${number(metric.mae,4)} USD` : '—';
 const dateText = (value) => { if (!value) return '—'; const date = new Date(value); return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString('ko-KR', {month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}); };
-const statusText = (status) => ({idle:'대기',waiting:'다음 회차 대기',running:'진행 중',collecting:'수집 중',loading:'불러오는 중',downloading:'모델 내려받는 중',training:'학습 중',evaluating:'검증 기록 중',validating:'검증 중',simulating:'모의운용 중',completed:'완료',complete:'완료',success:'완료',ready:'준비됨',failed:'오류',error:'오류',stopped:'중지됨',stopping:'중지 중',pending:'대기',not_started:'시작 전',unavailable:'사용 불가',skipped:'건너뜀'}[status] || status || '대기');
+const statusText = (status) => ({idle:'대기',waiting:'다음 회차 대기',backoff:'재시도 대기',running:'진행 중',collecting:'수집 중',loading:'불러오는 중',downloading:'모델 내려받는 중',training:'학습 중',evaluating:'검증 기록 중',validating:'검증 중',simulating:'모의운용 중',completed:'완료',complete:'완료',success:'완료',ready:'준비됨',failed:'오류',error:'오류',stopped:'중지됨',stopping:'중지 중',pending:'대기',not_started:'시작 전',unavailable:'사용 불가',skipped:'건너뜀'}[status] || status || '대기');
 let latestState = null;
 let posting = false;
 let paused = window.matchMedia('(prefers-reduced-motion: reduce)').matches;

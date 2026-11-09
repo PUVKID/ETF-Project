@@ -57,7 +57,7 @@
 +
 +## 🧪 확인 결과와 반영 상태
 +
-+핵심 단위검사 24개와 JavaScript 문법 검사를 구현자와 별도 검토자가 각각 통과했습니다. 최초 20단계 가중치 저장과 다음 회차에서 해당 가중치의 이어 학습·누적 단계 증가를 실제 확인했습니다. 초기 시험 MAPE는 추가 학습 약 0.7643%, 무변화 예측 약 0.7550%로 투자 우위를 입증하지 않았습니다.
++핵심 단위검사와 JavaScript 문법 검사를 구현자와 별도 검토자가 각각 수행합니다. 최초 20단계 가중치 저장과 다음 회차에서 해당 가중치의 이어 학습·누적 단계 증가를 실제 확인했습니다. 초기 시험 MAPE는 추가 학습 약 0.7643%, 무변화 예측 약 0.7550%로 투자 우위를 입증하지 않았습니다. 최종 상시 관측에서 발견한 Windows 상태 저장 충돌은 실제 읽기 핸들로 재현하여 제한된 원자 교체 재시도와 영구 실패 검사를 추가했습니다.
 +
 +무료 시세와 토스 일반 공시 비용을 사용하는 모의운용이며 세후 실계좌 재현은 아닙니다. 2026-11-10 현재 GitHub 저장소 생성·원격 반영 확인은 대기 중입니다. 로컬 검사 성공을 원격 반영 완료로 간주하지 않습니다.
 --- /dev/null
@@ -133,10 +133,10 @@
 +
 +| 최종 파일 | 1차 보존 원본 | 바이트 | SHA-256 |
 +| --- | --- | ---: | --- |
-+| 대시보드 실행.cmd | 납품 자료/대시보드 실행.cmd | 130 | d0c8f06b6212c396579f45e3765f99e292d86313aea71b31ad559298aa50787c |
++| 대시보드 실행.cmd | 납품 자료/대시보드 실행.cmd | 147 | a44625baa2deccfbe77e4f47ad6776919c5ce953ac1e4c8ad390dc50d5e700cf |
 +| 사용 안내.md | 납품 자료/사용 안내.md | 3817 | 9732d4e1df72ed032c23db2ec27ad75faf29e24cb3fa89a5d0519b3ed4193c69 |
 +
-+이전 최종 파일은 없는 최초 납품입니다. 검증 이후 프로젝트 최종 폴더에 이 두 파일만 배치합니다. 중간본·캐시·운영 기록은 포함하지 않습니다.
++같은 최초 개발 요청의 검증 과정에서 실행 파일의 한글 경로 처리를 보완했습니다. 초기 배치 원본은 차수 기록에 보존하고, 검증 이후 새 실행 파일로 교체합니다. 최종에는 위 두 파일만 두며 중간본·캐시·운영 기록은 포함하지 않습니다.
 --- /dev/null
 +++ b/1차/requirements.txt
 @@ -0,0 +1,7 @@
@@ -149,7 +149,7 @@
 +peft>=0.18.1,<1
 --- /dev/null
 +++ b/1차/run_pipeline.py
-@@ -0,0 +1,70 @@
+@@ -0,0 +1,71 @@
 +"""단일 작업과 중지 가능한 지속 학습 루프의 명령 진입점입니다."""
 +
 +import argparse
@@ -182,6 +182,7 @@
 +                          "message": "로컬 작업 실행 중", "next_run_at": None})
 +        while not STOP.exists():
 +            try:
++                update_state(job={"status": "running", "message": "수집·학습 작업을 실행하고 있습니다", "next_run_at": None})
 +                market = load_market()
 +                if action == "refresh" or not market["series"] or (continuous and time.monotonic() - last_refresh >= config.get("refresh_seconds", 21600)):
 +                    market = refresh_market()
@@ -380,7 +381,7 @@
 +"""장기투자 모의운용의 비공개 로컬 실행 모듈입니다."""
 --- /dev/null
 +++ b/1차/src/core.py
-@@ -0,0 +1,152 @@
+@@ -0,0 +1,163 @@
 +"""외부 패키지 없이 검증 가능한 시세·분할·모의체결 계산입니다."""
 +
 +from datetime import date, datetime, time, timezone
@@ -389,6 +390,7 @@
 +import os
 +from pathlib import Path
 +import tempfile
++import time as clock
 +
 +
 +def now_iso():
@@ -413,7 +415,17 @@
 +            stream.write("\n")
 +            stream.flush()
 +            os.fsync(stream.fileno())
-+        os.replace(temporary, path)
++        # Windows의 읽기 핸들이 잠깐 교체를 막을 수 있어 같은 원자 교체만 한정 재시도합니다.
++        # WinError 5/32 이외에는 즉시 실패하며, 영구 거부도 9회/대기 합계 0.91초 뒤 원문을 올립니다.
++        delays = (0.01, 0.02, 0.04, 0.08, 0.16, 0.2, 0.2, 0.2)
++        for attempt in range(len(delays) + 1):
++            try:
++                os.replace(temporary, path)
++                break
++            except OSError as error:
++                if getattr(error, "winerror", None) not in (5, 32) or attempt == len(delays):
++                    raise
++                clock.sleep(delays[attempt])
 +    finally:
 +        if os.path.exists(temporary):
 +            os.unlink(temporary)
@@ -1816,6 +1828,137 @@
 +if __name__ == "__main__":
 +    unittest.main()
 --- /dev/null
++++ b/1차/tests/test_storage.py
+@@ -0,0 +1,128 @@
++import os
++from pathlib import Path
++import tempfile
++import threading
++import unittest
++from unittest.mock import patch
++
++from src import core
++
++
++class AtomicStorageTests(unittest.TestCase):
++    @unittest.skipUnless(os.name == "nt", "Windows의 실제 파일 공유 규칙 검사")
++    def test_a_brief_real_reader_handle_does_not_abort_atomic_save(self):
++        with tempfile.TemporaryDirectory() as folder:
++            path = Path(folder) / "상태.json"
++            core.save_json(path, {"value": "원본"})
++            ready = threading.Event()
++            release = threading.Event()
++            errors = []
++            actual_replace = os.replace
++
++            def reader():
++                with path.open("rb"):
++                    ready.set()
++                    release.wait(3)
++
++            def attempt_replace(source, target):
++                try:
++                    return actual_replace(source, target)
++                except OSError as error:
++                    errors.append(getattr(error, "winerror", None))
++                    release.set()
++                    raise
++
++            thread = threading.Thread(target=reader)
++            thread.start()
++            try:
++                self.assertTrue(ready.wait(2))
++                with patch("src.core.os.replace", side_effect=attempt_replace):
++                    core.save_json(path, {"value": "새값"})
++            finally:
++                release.set()
++                thread.join(3)
++            self.assertIn(errors[0], (5, 32))
++            self.assertEqual(core.read_json(path), {"value": "새값"})
++            self.assertEqual(list(Path(folder).iterdir()), [path])
++
++    def test_permanent_windows_denial_is_bounded_and_preserves_the_original(self):
++        with tempfile.TemporaryDirectory() as folder:
++            path = Path(folder) / "상태.json"
++            core.save_json(path, {"value": "원본"})
++            denied = PermissionError("검사용 영구 접근 거부")
++            denied.winerror = 5
++            with patch("src.core.os.replace", side_effect=denied) as replacement, patch("time.sleep"):
++                with self.assertRaises(PermissionError) as caught:
++                    core.save_json(path, {"value": "새값"})
++            self.assertIs(caught.exception, denied)
++            self.assertGreaterEqual(replacement.call_count, 2)
++            self.assertLessEqual(replacement.call_count, 10)
++            self.assertEqual(core.read_json(path), {"value": "원본"})
++            self.assertEqual(list(Path(folder).iterdir()), [path])
++
++    def test_unrelated_windows_error_is_not_retried(self):
++        with tempfile.TemporaryDirectory() as folder:
++            path = Path(folder) / "상태.json"
++            core.save_json(path, {"value": "원본"})
++            denied = PermissionError("검사용 별도 권한 오류")
++            denied.winerror = 1314
++            with patch("src.core.os.replace", side_effect=denied) as replacement:
++                with self.assertRaises(PermissionError) as caught:
++                    core.save_json(path, {"value": "새값"})
++            self.assertIs(caught.exception, denied)
++            self.assertEqual(replacement.call_count, 1)
++            self.assertEqual(core.read_json(path), {"value": "원본"})
++            self.assertEqual(list(Path(folder).iterdir()), [path])
++
++    def test_windows_sharing_violation_can_finish_after_the_reader_releases(self):
++        with tempfile.TemporaryDirectory() as folder:
++            path = Path(folder) / "상태.json"
++            core.save_json(path, {"value": "원본"})
++            actual_replace = os.replace
++            failures = []
++
++            def temporarily_busy(source, target):
++                if len(failures) < 2:
++                    self.assertEqual(core.read_json(path), {"value": "원본"})
++                    denied = PermissionError("검사용 일시 공유 충돌")
++                    denied.winerror = 32
++                    failures.append(denied)
++                    raise denied
++                return actual_replace(source, target)
++
++            with patch("src.core.os.replace", side_effect=temporarily_busy), patch("time.sleep"):
++                core.save_json(path, {"value": "새값"})
++            self.assertEqual(core.read_json(path), {"value": "새값"})
++            self.assertEqual(list(Path(folder).iterdir()), [path])
++
++
++class PipelineRecoveryTests(unittest.TestCase):
++    def test_backoff_is_cleared_before_the_next_training_attempt(self):
++        import run_pipeline as pipeline
++        from src import runtime
++        with tempfile.TemporaryDirectory() as folder:
++            temporary = Path(folder)
++            stop = temporary / "중지요청"
++            attempts = []
++
++            def train():
++                attempts.append(runtime.load_state()["job"])
++                if len(attempts) == 1:
++                    raise RuntimeError("제어된 첫 회차 실패")
++                stop.write_text("검사 종료", encoding="utf-8")
++
++            data = {"series": {"A": []}}
++            with patch.object(runtime, "PRIVATE", temporary), patch.object(runtime, "STATE", temporary / "상태.json"), \
++                 patch.object(runtime, "LOCK", temporary / "작업잠금"), patch.object(pipeline, "STOP", stop), \
++                 patch.object(pipeline, "load_config", return_value={"refresh_seconds": 21600}), \
++                 patch.object(pipeline, "load_market", return_value=data), patch.object(pipeline, "refresh_market", return_value=data), \
++                 patch.object(pipeline, "reconcile_forward"), patch.object(pipeline, "reconcile_paper"), \
++                 patch.object(pipeline, "wait_cooperatively", return_value=True), patch.object(pipeline, "train_round", side_effect=train):
++                pipeline.run("start")
++            self.assertEqual(len(attempts), 2)
++            self.assertEqual(attempts[1]["status"], "running")
++            self.assertIsNone(attempts[1]["next_run_at"])
++
++
++if __name__ == "__main__":
++    unittest.main()
+--- /dev/null
 +++ b/1차/web/app.js
 @@ -0,0 +1,163 @@
 +'use strict';
@@ -1828,7 +1971,7 @@
 +const hasKrwMae = (metric) => typeof metric.mae_krw === 'number' && Number.isFinite(metric.mae_krw);
 +const maeText = (metric) => hasKrwMae(metric) ? `${number(metric.mae_krw,2)}원` : typeof metric.mae === 'number' && Number.isFinite(metric.mae) ? `${number(metric.mae,4)} USD` : '—';
 +const dateText = (value) => { if (!value) return '—'; const date = new Date(value); return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString('ko-KR', {month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}); };
-+const statusText = (status) => ({idle:'대기',waiting:'다음 회차 대기',running:'진행 중',collecting:'수집 중',loading:'불러오는 중',downloading:'모델 내려받는 중',training:'학습 중',evaluating:'검증 기록 중',validating:'검증 중',simulating:'모의운용 중',completed:'완료',complete:'완료',success:'완료',ready:'준비됨',failed:'오류',error:'오류',stopped:'중지됨',stopping:'중지 중',pending:'대기',not_started:'시작 전',unavailable:'사용 불가',skipped:'건너뜀'}[status] || status || '대기');
++const statusText = (status) => ({idle:'대기',waiting:'다음 회차 대기',backoff:'재시도 대기',running:'진행 중',collecting:'수집 중',loading:'불러오는 중',downloading:'모델 내려받는 중',training:'학습 중',evaluating:'검증 기록 중',validating:'검증 중',simulating:'모의운용 중',completed:'완료',complete:'완료',success:'완료',ready:'준비됨',failed:'오류',error:'오류',stopped:'중지됨',stopping:'중지 중',pending:'대기',not_started:'시작 전',unavailable:'사용 불가',skipped:'건너뜀'}[status] || status || '대기');
 +let latestState = null;
 +let posting = false;
 +let paused = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -2162,8 +2305,9 @@
 +
 --- /dev/null
 +++ b/1차/납품 자료/대시보드 실행.cmd
-@@ -0,0 +1,4 @@
+@@ -0,0 +1,5 @@
 +@echo off
++chcp 65001 >nul
 +cd /d "%~dp0..\1차"
 +".venv\Scripts\python.exe" -B -X utf8 server.py --port 8879 --continuous
 +if errorlevel 1 pause
@@ -2201,7 +2345,7 @@
 +모든 미래 결함이 없거나 실거래 수익을 보장하는 완성품이라는 의미는 아닙니다. 장기간 운용 중 데이터 제공 정책·규제 비용·환경 상태를 확인해야 합니다.
 --- /dev/null
 +++ b/1차/변경기록.md
-@@ -0,0 +1,15 @@
+@@ -0,0 +1,19 @@
 +# 변경 기록
 +
 +## 1차
@@ -2217,6 +2361,10 @@
 +실행 중 Windows 잠금 byte를 읽어 API 조회가 실패했던 문제를 수정하고 회귀 검사를 추가했습니다. 상태 전체 저장을 최대 초당 1회로 제한하고 손실·저장 텐서의 유한값 검사를 유지했습니다. 원화 환산 MAE와 명시적 통화 단위, 라이브러리 불러오기 상태도 표시합니다. 과거 실패 원문은 로컬 비공개 이력에 보존합니다.
 +
 +핵심 단위검사 24개와 화면 문법 검사를 구현자 및 별도 검토자가 통과했습니다. 실제 중지·저장·재개 최종 검토와 GitHub 원격 확인 결과는 각각 별도 기록합니다. 저장소 생성 기능·브라우저 인증/접근 제약으로 원격 반영은 대기 중이며 전체 공개 완료로 보고하지 않습니다.
++
++초기 독립 검사 이후 상시 관측에서 Windows 읽기 핸들과 상태 JSON 교체가 겹치는 WinError 5를 발견했습니다. 원본을 보존한 격리 재현 후 같은 원자 교체를 최대 9회, 대기 합계 0.91초로 제한해 재시도하도록 수정했습니다. WinError 5·32 이외의 오류는 즉시, 지속되는 거부는 한도 뒤 그대로 올립니다. 기존 원본과 임시 파일 정리도 검사합니다. 재시도 대기 뒤에는 진행 상태와 다음 확인 시각을 초기화합니다. 이전 통과 기록과 새 자연 오류를 별도 보존하며 초기 통과만으로 장기 무오류를 주장하지 않습니다.
++
++한글 경로를 포함한 실행 파일은 CMD 코드페이지 949에서 실제 경로 탐색 실패를 재현했습니다. 첫 부분에서 현재 CMD의 UTF-8 코드페이지를 설정하도록 수정한 뒤 같은 환경에서 경로 탐색 성공을 확인했습니다. 운영체제 전역 언어 설정은 바꾸지 않습니다. 초기 실행 파일은 차수 기록에 보존합니다.
 --- /dev/null
 +++ b/1차/사용 안내.md
 @@ -0,0 +1,29 @@

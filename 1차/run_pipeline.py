@@ -30,6 +30,7 @@ def run(action):
                           "message": "로컬 작업 실행 중", "next_run_at": None})
         while not STOP.exists():
             try:
+                update_state(job={"status": "running", "message": "수집·학습 작업을 실행하고 있습니다", "next_run_at": None})
                 market = load_market()
                 if action == "refresh" or not market["series"] or (continuous and time.monotonic() - last_refresh >= config.get("refresh_seconds", 21600)):
                     market = refresh_market()

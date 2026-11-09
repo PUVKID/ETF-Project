@@ -6,6 +6,7 @@ import math
 import os
 from pathlib import Path
 import tempfile
+import time as clock
 
 
 def now_iso():
@@ -30,7 +31,17 @@ def save_json(path, value):
             stream.write("\n")
             stream.flush()
             os.fsync(stream.fileno())
-        os.replace(temporary, path)
+        # Windows의 읽기 핸들이 잠깐 교체를 막을 수 있어 같은 원자 교체만 한정 재시도합니다.
+        # WinError 5/32 이외에는 즉시 실패하며, 영구 거부도 9회/대기 합계 0.91초 뒤 원문을 올립니다.
+        delays = (0.01, 0.02, 0.04, 0.08, 0.16, 0.2, 0.2, 0.2)
+        for attempt in range(len(delays) + 1):
+            try:
+                os.replace(temporary, path)
+                break
+            except OSError as error:
+                if getattr(error, "winerror", None) not in (5, 32) or attempt == len(delays):
+                    raise
+                clock.sleep(delays[attempt])
     finally:
         if os.path.exists(temporary):
             os.unlink(temporary)
