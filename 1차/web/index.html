@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="ko" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>오래, 꾸준히 · 장기투자 모의운용</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <aside class="sidebar">
+    <a class="brand" href="#overview"><span class="brand-mark">∞</span> 오래, 꾸준히<span class="brand-sub">장기투자 모의운용</span></a>
+    <nav aria-label="주요 메뉴">
+      <a class="selected" href="#overview"><span>01</span> 운용 현황</a>
+      <a href="#learning"><span>02</span> 모델 학습</a>
+      <a href="#validation"><span>03</span> 검증 결과</a>
+      <a href="#settings"><span>04</span> 운용 설정</a>
+    </nav>
+    <div class="sidebar-bottom"><span class="local-dot"></span> 이 컴퓨터에서만 운용<p>실거래 주문 없이<br>데이터와 모델을 검증합니다.</p><button id="theme-toggle" class="quiet">다크 모드</button></div>
+  </aside>
+  <main>
+    <header class="topbar"><span>약 2개월 연속 학습 · 중지할 때까지</span><div><span class="mode-label">모의운용</span><span id="clock">연결 확인 중</span><button id="theme-toggle-mobile" class="quiet mobile-theme" aria-label="다크 모드로 전환">다크</button></div></header>
+    <div id="connection" class="connection" role="status">로컬 서버의 데이터를 기다리고 있습니다.</div>
+    <section id="overview" class="section">
+      <div class="section-heading"><div><h1>오늘의 운용 현황</h1><p id="data-time">시세 기준 시각을 확인하고 있습니다.</p></div><div class="actions"><button data-action="refresh" class="secondary">데이터 수집</button><button data-action="start" class="primary">계속 운용 시작</button></div></div>
+      <div class="overview-grid">
+        <div class="paper-summary"><h2>100만 원 모의계좌</h2><div id="paper-equity" class="total-value">—<span> KRW</span></div><p id="paper-status" class="muted">가상계좌 집계 대기</p><dl class="paper-stats"><div><dt>시작 원금</dt><dd>1,000,000원</dd></div><div><dt>원화 현금</dt><dd id="paper-cash-krw">—</dd></div><div><dt>달러 현금 · 원화 평가</dt><dd id="paper-cash-usd">—</dd></div><div><dt>가상 보유 평가</dt><dd id="paper-position-value">—</dd></div><div><dt>손익</dt><dd id="paper-pnl">—</dd></div><div><dt>누적 거래비용 · 수수료·SEC</dt><dd id="paper-fees">—</dd></div><div><dt>누적 환전비용</dt><dd id="paper-fx-fees">—</dd></div></dl><div id="paper-positions" class="holdings"><p class="empty">가상 보유 내역 집계 대기</p></div><p id="paper-fx" class="muted">KRW ↔ USD 환산 대기 · 환율 출처와 시각 확인 전입니다.</p><details class="fee-policy"><summary>토스 공식 기본요율 모의 · 비용 기준</summary><p>공식 안내 확인일 2026-11-10 · <a href="https://corp.tossinvest.com/ko/business?tab=commission" target="_blank" rel="noopener noreferrer">토스증권 수수료 안내 ↗</a></p><dl><div><dt>미국 주식 거래수수료</dt><dd>0.1% · 1센트 미만 절사</dd></div><div><dt>주문금액 10 USD 이하</dt><dd>거래수수료 0 · SEC 비용 별도</dd></div><div><dt>매도 SEC 비용</dt><dd>0.00206% · 최소 0.01 USD · 센트 반올림</dd></div><div><dt>환전비용 가정</dt><dd>영업일 09:00~15:30 5bp · 그 외 50bp (한국 시각)</dd></div></dl><p id="paper-fee-policy-status">기본 0.1% 적용은 사용자가 확인했습니다. 계좌 API와 실제 은행 호가는 연결하지 않아 토스의 실제 체결·환전 비용과 완전히 같지 않습니다.</p><p>양도소득세·배당세는 계산하지 않습니다. 매도 SEC 비용은 거래비용에 별도로 포함합니다.</p></details></div><div class="performance"><div class="panel-title"><h2>같은 출발점에서 비교</h2><span>초기값 100</span></div><div class="legend"><span class="model">동일가중 단순 보유</span><span class="benchmark">SPYM 단순 보유</span><span class="rebalance">월간 리밸런싱</span></div><div id="history-chart" class="history-chart"><p class="empty">실제 검증 데이터가 쌓이면 비교 곡선이 나타납니다.</p></div><p class="muted chart-note">모의계좌와 별개인 과거 정책 비교입니다. 현재 공시 비용요율을 과거 전체에 적용한 가정이며, 실제 과거 수수료나 모델 거래 수익을 재현하지 않습니다.</p></div>
+      </div>
+      <div id="performance-metrics" class="metric-strip"><div><span>모의 누적수익률</span><strong>—</strong></div><div><span>최대 낙폭</span><strong>—</strong></div><div><span>거래비용</span><strong>—</strong></div><div><span>회전율</span><strong>—</strong></div></div>
+    </section>
+    <section id="learning" class="section learning-section">
+      <div class="section-heading"><div><h2 class="section-title">데이터가 쌓이고, 판단이 다듬어집니다.</h2><p>Chronos-2 하나를 마지막 저장 지점에서 이어 학습합니다.</p></div><div class="actions"><button id="motion-toggle" class="quiet" aria-pressed="false">모션 정지</button><button data-action="train" class="secondary">이어 학습</button><button data-action="stop" class="stop">운용 중지</button></div></div>
+      <div class="workflow-layout"><div class="workflow-viewport" id="workflow"><div class="workflow-scene"><div class="floor-grid"></div><div class="flow-track"></div><div class="stage stage-data" data-stage="data"><div class="stage-object data-object"><i></i><i></i><i></i><i></i></div><strong>01 데이터 수집</strong><span class="stage-status">확인 중</span></div><div class="stage stage-training" data-stage="training"><div class="stage-object model-object"><i></i><i></i><i></i></div><strong>02 이어 학습</strong><span class="stage-status">확인 중</span></div><div class="stage stage-validation" data-stage="validation"><div class="stage-object validation-object"><i></i><i></i><i></i></div><strong>03 검증 모니터링</strong><span class="stage-status">확인 중</span></div><div class="stage stage-simulation" data-stage="simulation"><div class="stage-object simulation-object"><i></i><i></i><i></i></div><strong>04 모의운용</strong><span class="stage-status">확인 중</span></div></div></div><div class="learning-detail"><div class="panel-title"><h3>현재 작업</h3><span id="job-status" class="status-badge">연결 대기</span></div><p id="job-message">서버 상태를 확인하고 있습니다.</p><div class="progress-track"><div id="training-progress"></div></div><dl id="learning-stats"><div><dt>학습 회차</dt><dd>—</dd></div><div><dt>학습 단계</dt><dd>—</dd></div><div><dt>새로 수집한 일봉</dt><dd>—</dd></div><div><dt>최근 손실</dt><dd>—</dd></div></dl><p id="checkpoint-status" class="muted">Chronos-2 저장 상태를 확인하고 있습니다.</p><p class="muted">검증 결과는 학습 상태를 살피는 기록입니다.</p><p id="next-run" class="muted"></p></div></div>
+      <div class="data-footnote"><span id="data-source">데이터 출처 확인 중</span><span>화면은 1초마다 확인 · 시세는 일봉 기준</span></div>
+    </section>
+    <section id="validation" class="section">
+      <div class="section-heading"><div><h2 class="section-title">결과를 확인하고, 다음 회차로</h2><p>학습 성과와 투자 성과는 서로 다른 기준으로 살펴봅니다.</p></div><span id="validation-status" class="status-badge">검증 대기</span></div>
+      <div class="table-wrap"><table><caption class="sr-only">모델별 예측 검증 결과</caption><thead><tr><th>모델</th><th>구간</th><th id="mae-heading">MAE(통화 표시)</th><th>MAPE</th><th>방향 일치율</th><th>표본 수</th></tr></thead><tbody id="validation-rows"><tr><td colspan="6" class="empty">검증 결과가 아직 없습니다.</td></tr></tbody></table></div>
+      <p class="muted chart-note">원 환산 MAE는 현재 환율로 환산한 참고값입니다. 과거 시점의 원화 오차를 재현하지 않으며, 환산값이 없으면 USD 오차를 단위와 함께 표시합니다.</p><div id="validation-notes" class="notes"></div>
+      <div class="log-heading"><h3>최근 작업 기록</h3><span>로컬 실행 기록</span></div><div id="logs" class="logs"><p class="empty">작업 기록을 기다리고 있습니다.</p></div>
+    </section>
+    <section id="settings" class="section settings-section">
+      <div class="section-heading"><div><h2 class="section-title">오래 가져갈 때의 가정</h2><p>모의계좌의 원화 잔고에 가정 수익률을 적용합니다. 모델 예측이 아닙니다.</p></div></div>
+      <div class="scenario-layout"><form id="scenario-form"><label>투자 기간 <div class="input-unit"><input id="years" type="number" min="10" max="60" step="1" value="10" required><span>년</span></div></label><label>매달 추가할 금액 <div class="input-unit"><input id="contribution" type="number" min="0" max="10000000" step="any" value="0" required><span>원</span></div></label><label>가정 연수익률 <div class="input-unit"><input id="assumed-return" type="number" min="-99" max="100" step="0.1" value="4" required><span>%</span></div></label><button type="submit" class="secondary">가정 계산하기</button></form><div class="scenario-result"><span>가정에 따른 미래 평가금액</span><strong id="scenario-value">—</strong><p id="scenario-note">모의계좌 잔고 확인 전에는 시작 원금 100만 원을 기준으로 계산합니다.</p><p class="muted">세금·환율·물가·변동성을 반영하지 않은 단순 계산이며, 입력값은 저장하지 않습니다.</p></div></div>
+      <div class="boundary-note">이 화면에서는 실거래 주문을 보내지 않습니다. 모의계좌·시세·모델은 로컬 서버에서 처리합니다.</div>
+    </section>
+    <footer>오래, 꾸준히 <span>수익을 약속하기보다, 근거를 확인하는 습관.</span></footer>
+  </main>
+</body>
+</html>
