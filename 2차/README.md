@@ -1,6 +1,10 @@
 <a name="-관측값을-그대로-확인하는-장기투자-대시보드"></a>
 # 관측값을 확인하는 장기투자 대시보드
 
+<!-- user-levels:start -->
+**수준별 전체 안내:** [LEVEL 1 - Beginner](../docs/%EC%9D%BD%EA%B8%B0%EC%95%88%EB%82%B4/%EB%A0%88%EB%B2%A81.md) · [LEVEL 2 - Explorer](../docs/%EC%9D%BD%EA%B8%B0%EC%95%88%EB%82%B4/%EB%A0%88%EB%B2%A82.md) · [LEVEL 3 - Practitioner](../docs/%EC%9D%BD%EA%B8%B0%EC%95%88%EB%82%B4/%EB%A0%88%EB%B2%A83.md) · [LEVEL 4 - Advanced](../docs/%EC%9D%BD%EA%B8%B0%EC%95%88%EB%82%B4/%EB%A0%88%EB%B2%A84.md) · [LEVEL 5 - Expert](../docs/%EC%9D%BD%EA%B8%B0%EC%95%88%EB%82%B4/%EB%A0%88%EB%B2%A85.md)
+<!-- user-levels:end -->
+
 1차의 Chronos-2 이어 학습과 원화 100만 원 모의 원장을 유지하면서 수치 표시와 화면 조작을 보완했습니다. 백분율 요약은 소수 둘째 자리 아래를 버리며, 원비율과 전체 정밀도는 ‘저장 원값 보기’에서 확인합니다. 화면의 요약 표시 때문에 원본 결과를 고치지 않습니다.
 
 2차 서버는 `../1차/src`의 기존 엔진을 사용하며, 가중치·원장·환경도 1차에 그대로 보관합니다. 2차는 화면과 서버 진입점의 후속 차수이며 새 모델 학습 실험을 뜻하지 않습니다.
