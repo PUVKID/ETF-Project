@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="ko" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>오래, 꾸준히 · 장기투자 모의운용</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/numbers.js" defer></script>
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <aside class="sidebar">
+    <a class="brand" href="#overview"><span class="brand-mark">∞</span> 오래, 꾸준히<span class="brand-sub">장기투자 모의운용</span></a>
+    <nav aria-label="주요 메뉴">
+      <a class="selected" href="#overview"><span>01</span> 운용 현황</a>
+      <a href="#holdings"><span>02</span> 보유·주문</a>
+      <a href="#trades"><span>03</span> 체결 내역</a>
+      <a href="#learning"><span>04</span> 모델 학습</a>
+      <a href="#validation"><span>05</span> 검증 결과</a>
+      <a href="#settings"><span>06</span> 운용 설정</a>
+    </nav>
+    <div class="sidebar-bottom"><span class="local-dot"></span> 이 컴퓨터에서만 운용<p>실거래 주문 없이<br>데이터와 모델을 검증합니다.</p><button id="theme-toggle" class="quiet">다크 모드</button></div>
+  </aside>
+  <main>
+    <header class="topbar"><span>약 2개월 연속 학습 · 중지할 때까지</span><div><span class="mode-label">모의운용</span><span id="clock">연결 확인 중</span><button id="theme-toggle-mobile" class="quiet mobile-theme" aria-label="다크 모드로 전환">다크</button></div></header>
+    <div id="connection" class="connection" role="status">로컬 서버의 데이터를 기다리고 있습니다.</div>
+    <section id="overview" class="section">
+      <div class="section-heading"><div><h1>오늘의 운용 현황</h1><p id="data-time">시세 기준 시각을 확인하고 있습니다.</p></div><div class="actions"><button data-action="refresh" class="secondary">데이터 수집</button><button data-action="start" class="primary">계속 운용 시작</button></div></div>
+      <div class="overview-grid">
+        <div class="paper-summary"><h2>100만 원 모의계좌</h2><div id="paper-equity" class="total-value">—<span> KRW</span></div><p id="paper-status" class="muted">가상계좌 집계 대기</p><dl class="paper-stats"><div><dt>시작 원금</dt><dd>1,000,000원</dd></div><div><dt>원화 현금</dt><dd id="paper-cash-krw">—</dd></div><div><dt>달러 현금 · 원화 평가</dt><dd id="paper-cash-usd">—</dd></div><div><dt>가상 보유 평가</dt><dd id="paper-position-value">—</dd></div><div><dt>손익</dt><dd id="paper-pnl">—</dd></div><div><dt>누적 거래비용 · 수수료·SEC</dt><dd id="paper-fees">—</dd></div><div><dt>누적 환전비용</dt><dd id="paper-fx-fees">—</dd></div></dl><p class="paper-detail-link"><a href="#holdings">현재 모의 보유와 주문 확인하기 →</a></p><p id="paper-fx" class="muted">KRW ↔ USD 환산 대기 · 환율 출처와 시각 확인 전입니다.</p><details class="fee-policy"><summary>토스 공식 기본요율 모의 · 비용 기준</summary><p>공식 안내 확인일 2026-11-10 · <a href="https://corp.tossinvest.com/ko/business?tab=commission" target="_blank" rel="noopener noreferrer">토스증권 수수료 안내 ↗</a></p><dl><div><dt>미국 주식 거래수수료</dt><dd>0.1% · 1센트 미만 절사</dd></div><div><dt>주문금액 10 USD 이하</dt><dd>거래수수료 0 · SEC 비용 별도</dd></div><div><dt>매도 SEC 비용</dt><dd>0.00206% · 최소 0.01 USD · 센트 반올림</dd></div><div><dt>환전비용 가정</dt><dd>영업일 09:00~15:30 5bp · 그 외 50bp (한국 시각)</dd></div></dl><p id="paper-fee-policy-status">기본 0.1% 적용은 사용자가 확인했습니다. 계좌 API와 실제 은행 호가는 연결하지 않아 토스의 실제 체결·환전 비용과 완전히 같지 않습니다.</p><p>양도소득세·배당세는 계산하지 않습니다. 매도 SEC 비용은 거래비용에 별도로 포함합니다.</p></details></div><div class="performance"><div class="panel-title"><h2>같은 출발점에서 비교</h2><span>초기값 100</span></div><div class="legend"><span class="model">동일가중 단순 보유</span><span class="benchmark">SPYM 단순 보유</span><span class="rebalance">월간 리밸런싱</span></div><div id="history-chart" class="history-chart"><p class="empty">실제 검증 데이터가 쌓이면 비교 곡선이 나타납니다.</p></div><p class="muted chart-note">모의계좌와 별개인 과거 정책 비교입니다. 현재 공시 비용요율을 과거 전체에 적용한 가정이며, 실제 과거 수수료나 모델 거래 수익을 재현하지 않습니다.</p></div>
+      </div>
+      <p class="display-rule">백분율은 소수 첫째 자리 반올림 · <a href="#raw-values">저장 원값 보기</a></p><div id="performance-metrics" class="metric-strip"><div><span>모의 누적수익률</span><strong>—</strong></div><div><span>최대 낙폭</span><strong>—</strong></div><div><span>거래비용</span><strong>—</strong></div><div><span>회전율</span><strong>—</strong></div></div>
+    </section>
+    <section id="holdings" class="section account-section">
+      <div class="section-heading"><div><h2 class="section-title">현재 모의 보유와 주문</h2><p>가상 원화 100만 원으로 운용하는 계좌입니다. 실제 계좌 보유는 연결하지 않습니다.</p></div><span id="position-count" class="status-badge">보유 확인 중</span></div>
+      <div id="universe-policy" class="universe-policy"><p>자동 선택 범위와 운용 정책을 확인하고 있습니다.</p></div>
+      <div class="table-wrap" tabindex="0" role="region" aria-label="현재 모의 ETF 보유표 · 좌우 방향키로 스크롤"><table><caption class="sr-only">현재 모의 ETF 보유</caption><thead><tr><th>ETF · 티커</th><th>수량</th><th>평균 매입가 (USD)</th><th>매입원가 (USD)</th><th>매입원가 (원)</th><th>현재 평가 (원)</th><th>미실현 손익 (원)</th><th>손익률</th></tr></thead><tbody id="position-rows"><tr><td colspan="8" class="empty">모의 보유 내역을 확인하고 있습니다.</td></tr></tbody></table></div>
+      <p class="muted chart-note">매입원가가 확인되지 않은 값은 —로 표시합니다. 원화 평가와 손익에는 환율 변동이 반영됩니다.</p>
+      <div class="log-heading"><h3>주문 현황</h3><span id="order-count">주문 확인 중</span></div><p class="muted chart-note">최근 최대 100개 주문입니다. 대기 주문은 아직 체결된 보유나 거래가 아닙니다.</p>
+      <div class="table-wrap" tabindex="0" role="region" aria-label="모의 주문 현황표 · 좌우 방향키로 스크롤"><table><caption class="sr-only">모의 주문 현황</caption><thead><tr><th>ETF · 티커</th><th>구분</th><th>목표 비중</th><th>상태</th><th>생성 시각</th><th>주문 이유</th></tr></thead><tbody id="order-rows"><tr><td colspan="6" class="empty">주문 내역을 확인하고 있습니다.</td></tr></tbody></table></div>
+    </section>
+    <section id="trades" class="section trade-section">
+      <div class="section-heading"><div><h2 class="section-title">모의 체결 내역</h2><p>ETF 매수·매도 체결만 표시합니다. 새 관측을 기다리는 주문과 가상 환전은 별도입니다.</p></div><span id="trade-count" class="status-badge">체결 확인 중</span></div>
+      <div class="trade-toolbar"><label for="trade-side">거래 구분 <select id="trade-side"><option value="all">전체</option><option value="buy">매수</option><option value="sell">매도</option></select></label><div class="trade-pages"><button id="trade-previous" class="quiet" type="button" disabled>이전</button><span id="trade-page-label">조회 대기</span><button id="trade-next" class="quiet" type="button" disabled>다음</button><button id="trade-retry" class="secondary" type="button">다시 조회</button></div></div>
+      <p id="trade-status" class="muted" role="status">전체 거래 내역을 확인하고 있습니다.</p><p class="muted chart-note">모의 체결은 정규장의 완결된 1분봉을 사용합니다. 무료 데이터는 지연될 수 있으며 초 단위 실시간 체결이 아닙니다.</p>
+      <div id="trade-table-region" class="table-wrap" tabindex="0" role="region" aria-label="모의 체결 내역표 · 좌우 방향키로 스크롤" aria-busy="false"><table><caption class="sr-only">전체 모의 ETF 체결 내역 · 페이지당 50개</caption><thead><tr><th>ETF · 티커</th><th>매수·매도</th><th>체결 시각</th><th>수량</th><th>체결 단가 (USD)</th><th>거래금액 (원)</th><th>수수료·SEC (원)</th><th>환율 (원/USD)</th><th>실현손익 (원)</th><th>체결 이유·가정</th></tr></thead><tbody id="trade-rows"><tr><td colspan="10" class="empty">거래 조회 대기</td></tr></tbody></table></div>
+      <details class="trade-raw"><summary>현재 페이지 거래 응답 원문</summary><pre id="trade-json" tabindex="0" role="region" aria-label="현재 거래 페이지 API 응답 원문">—</pre></details>
+      <div class="log-heading"><h3>가상 환전 기록</h3><span>ETF 체결 수에 포함하지 않습니다.</span></div>
+      <div class="table-wrap" tabindex="0" role="region" aria-label="가상 환전 기록표 · 좌우 방향키로 스크롤"><table><caption class="sr-only">가상 원화·달러 환전</caption><thead><tr><th>구분</th><th>시각</th><th>원화 금액</th><th>달러 금액</th><th>환전비용 (원)</th><th>시장 기준환율 (원/USD)</th><th>모의 적용환율 (원/USD)</th></tr></thead><tbody id="cash-movement-rows"><tr><td colspan="7" class="empty">환전 기록 확인 중</td></tr></tbody></table></div>
+    </section>
+    <section id="learning" class="section learning-section">
+      <div class="section-heading"><div><h2 class="section-title">데이터가 쌓이고, 판단이 다듬어집니다.</h2><p>Chronos-2 하나를 마지막 저장 지점에서 이어 학습합니다.</p></div><div class="actions"><button id="motion-toggle" class="quiet" aria-pressed="false">모션 정지</button><button data-action="train" class="secondary">이어 학습</button><button data-action="stop" class="stop">운용 중지</button></div></div>
+      <div class="workflow-layout"><div class="workflow-viewport" id="workflow"><div class="workflow-scene"><div class="floor-grid"></div><div class="flow-track"></div><div class="stage stage-data" data-stage="data"><div class="stage-object data-object"><i></i><i></i><i></i><i></i></div><strong>01 데이터 수집</strong><span class="stage-status">확인 중</span></div><div class="stage stage-training" data-stage="training"><div class="stage-object model-object"><i></i><i></i><i></i></div><strong>02 이어 학습</strong><span class="stage-status">확인 중</span></div><div class="stage stage-validation" data-stage="validation"><div class="stage-object validation-object"><i></i><i></i><i></i></div><strong>03 검증 모니터링</strong><span class="stage-status">확인 중</span></div><div class="stage stage-simulation" data-stage="simulation"><div class="stage-object simulation-object"><i></i><i></i><i></i></div><strong>04 모의운용</strong><span class="stage-status">확인 중</span></div></div></div><div class="learning-detail"><div class="panel-title"><h3>현재 작업</h3><span id="job-status" class="status-badge">연결 대기</span></div><p id="job-message">서버 상태를 확인하고 있습니다.</p><div class="progress-track"><div id="training-progress"></div></div><dl id="learning-stats"><div><dt>학습 회차</dt><dd>—</dd></div><div><dt>학습 단계</dt><dd>—</dd></div><div><dt>새로 수집한 일봉</dt><dd>—</dd></div><div><dt>최근 손실</dt><dd>—</dd></div></dl><p id="checkpoint-status" class="muted">Chronos-2 저장 상태를 확인하고 있습니다.</p><p class="muted">검증 결과는 학습 상태를 살피는 기록입니다.</p><p id="next-run" class="muted"></p></div></div>
+      <div class="data-footnote"><span id="data-source">데이터 출처 확인 중</span><span>상태 1초 확인 · 학습 일봉 · 모의 체결 정규장 1분봉</span></div>
+    </section>
+    <section id="validation" class="section">
+      <div class="section-heading"><div><h2 class="section-title">결과를 확인하고, 다음 회차로</h2><p>학습 성과와 투자 성과는 서로 다른 기준으로 살펴봅니다.</p></div><span id="validation-status" class="status-badge">검증 대기</span></div>
+      <div class="table-wrap" tabindex="0" role="region" aria-label="예측 검증표 · 좌우 방향키로 스크롤"><table><caption class="sr-only">모델별 예측 검증 결과</caption><thead><tr><th>모델</th><th>구간</th><th id="mae-heading">MAE(통화 표시)</th><th>MAPE</th><th>방향 일치율</th><th>표본 수</th></tr></thead><tbody id="validation-rows"><tr><td colspan="6" class="empty">검증 결과가 아직 없습니다.</td></tr></tbody></table></div>
+      <p class="muted chart-note">원 환산 MAE는 현재 환율로 환산한 참고값입니다. 과거 시점의 원화 오차를 재현하지 않으며, 환산값이 없으면 USD 오차를 단위와 함께 표시합니다.</p><div id="validation-notes" class="notes"></div>
+      <details id="raw-values" class="raw-values"><summary>수치 원값과 전체 정밀도 보기</summary><p>백분율은 소수 첫째 자리로 반올림합니다. 원비율이 1 미만인데 100.0%로 보이면 (반올림)을 붙여 실제 원비율 1과 구분합니다. 금액·손실 등 다른 요약 수치는 기존 자릿수에서 0을 향해 자르며, 저장 원값은 바꾸지 않습니다.</p><p id="raw-update-note">원값은 이 영역을 열 때 고정합니다. 읽는 동안 매초 내용을 바꾸지 않습니다.</p><button id="raw-refresh" type="button" class="secondary">최신 원값으로 갱신</button><p id="raw-snapshot-time"></p><div class="table-wrap" tabindex="0" role="region" aria-label="저장 수치 원값 표 · 좌우 방향키로 스크롤"><table><thead><tr><th>항목</th><th>API 원값 · 원비율</th></tr></thead><tbody id="raw-value-rows"><tr><td colspan="2">—</td></tr></tbody></table></div><p>아래는 서버 JSON 응답 원문입니다. 백분율의 원비율, 손실·학습률과 모든 숫자 토큰을 응답 그대로 확인할 수 있습니다. 제공되지 않은 값은 위 표에서 —로 표시합니다.</p><pre id="raw-json" tabindex="0" role="region" aria-label="API JSON 응답 원문">—</pre></details>
+      <div class="log-heading"><h3>최근 작업 기록</h3><span>로컬 실행 기록</span></div><div id="logs" class="logs"><p class="empty">작업 기록을 기다리고 있습니다.</p></div>
+    </section>
+    <section id="settings" class="section settings-section">
+      <div class="section-heading"><div><h2 class="section-title">오래 가져갈 때의 가정</h2><p>모의계좌의 원화 잔고에 가정 수익률을 적용합니다. 모델 예측이 아닙니다.</p></div></div>
+      <div class="scenario-layout"><form id="scenario-form"><label>투자 기간 <div class="input-unit"><input id="years" type="number" min="10" max="60" step="1" value="10" required><span>년</span></div></label><label>매달 추가할 금액 <div class="input-unit"><input id="contribution" type="number" min="0" max="10000000" step="any" value="0" required><span>원</span></div></label><label>가정 연수익률 <div class="input-unit"><input id="assumed-return" type="number" min="-99" max="100" step="0.1" value="4" required><span>%</span></div></label><button type="submit" class="secondary">가정 계산하기</button></form><div class="scenario-result"><span>가정에 따른 미래 평가금액</span><strong id="scenario-value">—</strong><p id="scenario-note">모의계좌 잔고 확인 전에는 시작 원금 100만 원을 기준으로 계산합니다.</p><p class="muted">세금·환율·물가·변동성을 반영하지 않은 단순 계산이며, 입력값은 저장하지 않습니다.</p></div></div>
+      <div class="boundary-note">이 화면에서는 실거래 주문을 보내지 않습니다. 모의계좌·시세·모델은 로컬 서버에서 처리합니다.</div>
+    </section>
+    <footer>오래, 꾸준히 <span>수익을 약속하기보다, 근거를 확인하는 습관.</span></footer>
+  </main>
+</body>
+</html>
