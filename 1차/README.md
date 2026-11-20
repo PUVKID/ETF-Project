@@ -5,7 +5,7 @@
 **수준별 전체 안내:** [LEVEL 1 - Beginner](../docs/%EC%9D%BD%EA%B8%B0%EC%95%88%EB%82%B4/%EB%A0%88%EB%B2%A81.md) · [LEVEL 2 - Explorer](../docs/%EC%9D%BD%EA%B8%B0%EC%95%88%EB%82%B4/%EB%A0%88%EB%B2%A82.md) · [LEVEL 3 - Practitioner](../docs/%EC%9D%BD%EA%B8%B0%EC%95%88%EB%82%B4/%EB%A0%88%EB%B2%A83.md) · [LEVEL 4 - Advanced](../docs/%EC%9D%BD%EA%B8%B0%EC%95%88%EB%82%B4/%EB%A0%88%EB%B2%A84.md) · [LEVEL 5 - Expert](../docs/%EC%9D%BD%EA%B8%B0%EC%95%88%EB%82%B4/%EB%A0%88%EB%B2%A85.md)
 <!-- user-levels:end -->
 
-10년 이상 장기 투자를 위한 로컬 학습·모의 운용 도구입니다. 사전 학습 시 계열 모델을 추가 학습하고, 단순 보유와 비교하며, 데이터 수집부터 검증까지의 실제 진행 상태를 대시보드에 표시합니다.
+10년 이상 장기 투자를 위한 로컬 학습·모의 운용 도구입니다. 사전 학습 시계열 모델을 추가 학습하고, 단순 보유와 비교하며, 데이터 수집부터 검증까지의 실제 진행 상태를 대시보드에 표시합니다.
 
 약 두 달간의 연속 학습을 계획하고, **가상계좌** 원금 100 만 원을 달러로 환전하여 ETF 모의 투자를 진행합니다.
 
