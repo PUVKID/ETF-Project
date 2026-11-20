@@ -1,0 +1,8 @@
+비공개/
+.venv/
+__pycache__/
+*.pyc
+.env
+evidence/
+.codex/
+work/
