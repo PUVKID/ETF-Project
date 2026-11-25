@@ -1,0 +1,2709 @@
+diff --git a/6차/.gitignore b/6차/.gitignore
+new file mode 100644
+index 0000000..efd6b72
+--- /dev/null
++++ b/6차/.gitignore
+@@ -0,0 +1,8 @@
++비공개/
++.venv/
++__pycache__/
++*.pyc
++.env
++evidence/
++.codex/
++work/
+diff --git a/6차/README.md b/6차/README.md
+new file mode 100644
+index 0000000..fc6bd96
+--- /dev/null
++++ b/6차/README.md
+@@ -0,0 +1,18 @@
++# ETF Project · 6차
++
++**현재 상태:** 6차는 추가 학습 채택 여부와 운영 예측을 분리했습니다. 격리된 기존 코드 검사 87개와 최초 수집 조건을 보완한 영향 검사 5개가 통과했습니다. 새 일봉과 채택 저장본으로 예측하며, 실제 주문은 연결하지 않습니다. 과적합 부재·수익 우위는 입증되지 않았습니다.
++
++[LEVEL 1 - Beginner](../docs/읽기안내/레벨1.md) · [LEVEL 2 - Explorer](../docs/읽기안내/레벨2.md) · [LEVEL 3 - Practitioner](../docs/읽기안내/레벨3.md) · [LEVEL 4 - Advanced](../docs/읽기안내/레벨4.md) · [LEVEL 5 - Expert](../docs/읽기안내/레벨5.md)
++
++추가 학습이 거부되거나 새 학습 날짜가 없을 때도, **마지막으로 채택된 저장 모델이 최신 완결 일봉을 예측**하도록 수정했습니다. 5차의 가중치 보호·학습 예산·고정 검증은 유지합니다.
++
++| 과정 | 5차의 동작 | 6차의 동작 |
++| --- | --- | --- |
++| 추가 학습 거부 | 새 전망 발행도 생략 | 채택 저장본의 운영 예측을 학습 전에 실행 |
++| 새 학습 날짜 없음 | 수집·기존 주문 처리만 지속 | 새 예측 입력이면 채택 저장본으로 예측 |
++| 같은 입력 재확인 | 새 학습 예약 없음 | 저장본·문맥·자료 해시가 같으면 모델 재로드 생략 |
++| 연속 실행 최초 수집 | PC 가동 시간이 수집 주기보다 짧으면 생략 가능 | 첫 루프는 수집하고 이후 6시간 간격 적용 |
++| 중지·저장본 손상 | 가중치 보호 | 예측 경로도 STOP·SHA-256 확인 |
++
++
++[전체 차수](docs/REVISION_INDEX.md) · [6차 상세](docs/6차%20상세.md) · [직전 전체 비교](docs/6차%20전체%20비교.md) · [사용 안내](사용%20안내.md)
+diff --git a/6차/docs/6차 상세.md b/6차/docs/6차 상세.md
+new file mode 100644
+index 0000000..262b2f5
+--- /dev/null
++++ b/6차/docs/6차 상세.md	
+@@ -0,0 +1,139 @@
++# 6차 · 운영 예측과 추가 학습 분리
++
++추가 학습이 거부되거나 새 학습 날짜가 없을 때도, **마지막으로 채택된 저장 모델이 최신 완결 일봉을 예측**하도록 수정했습니다. 5차의 가중치 보호·학습 예산·고정 검증은 유지합니다.
++
++<a id="reading-level-1"></a>
++## LEVEL 1 - Beginner
++
++학습은 모델을 고치는 과정이고 예측은 지금의 모델로 다음 값을 계산하는 과정입니다. 학습 결과가 나빠 새 모델을 버리더라도 기존 모델의 예측까지 멈출 필요는 없습니다. 이번 차수에서는 이 두 과정을 나눕니다.
++
++| 과정 | 5차의 동작 | 6차의 동작 |
++| --- | --- | --- |
++| 추가 학습 거부 | 새 전망 발행도 생략 | 채택 저장본의 운영 예측을 학습 전에 실행 |
++| 새 학습 날짜 없음 | 수집·기존 주문 처리만 지속 | 새 예측 입력이면 채택 저장본으로 예측 |
++| 같은 입력 재확인 | 새 학습 예약 없음 | 저장본·문맥·자료 해시가 같으면 모델 재로드 생략 |
++| 연속 실행 최초 수집 | PC 가동 시간이 수집 주기보다 짧으면 생략 가능 | 첫 루프는 수집하고 이후 6시간 간격 적용 |
++| 중지·저장본 손상 | 가중치 보호 | 예측 경로도 STOP·SHA-256 확인 |
++
++| 조건 | 처리 | 확인할 근거 |
++| --- | --- | --- |
++| 사용 가중치 | 채택된 latest 저장본만 사용 | 파일별 SHA-256 |
++| 새 자료 없음 | 학습 예산을 늘리지 않음 | 5차 예약 원장 보존 |
++| 같은 예측 입력 | 예측 로드를 생략 | 운영예측_6차.json 완료 해시 |
++| 예측 오류·중지 | 완료 해시 미기록 | 다음 확인에서 재시도, STOP이면 발행 차단 |
++| 실제 주문 | 연결하지 않음 | 로컬 모의계좌만 처리 |
++
++**거래·수익·과적합 부재를 보장하지 않습니다.** 기존 15개 ETF의 비용·현금·정규장·관측 신선도·중복 체결 방어를 유지합니다. 같은 날짜의 배분은 최초 신호만 사용합니다. 종목별 마지막 일봉 날짜가 다르면 기존 정책에서 가장 이른 날짜를 신호 기준으로 사용하므로 일부 종목 갱신만으로 새 배분이 발행되지 않을 수 있습니다. 날짜가 서로 다른 전망의 효과는 별도 독립 성과로 입증되지 않았습니다.
++
++예측 원장·신호·계좌·완료 기록은 하나의 트랜잭션이 아닙니다. 중간 실패 시 기존 날짜별 중복 신호와 체결 방어를 사용해 재시도하지만, STOP 파일과 발행 사이의 프로세스 간 완전한 원자성은 보장하지 않습니다.
++
++[같은 수준 프로젝트](../../docs/읽기안내/레벨1.md) · [5차 같은 수준](../../5차/docs/5차%20상세.md#user-content-reading-level-1) · [직전 전체 비교](6차%20전체%20비교.md)
++
++<a id="reading-level-2"></a>
++## LEVEL 2 - Explorer
++
++수집 후 채택 저장본의 운영 예측을 먼저 확인하고 추가 학습을 시도합니다. 같은 예측 입력이면 저장한 완료 해시를 확인해 모델 로드를 생략합니다. 학습 대기는 예측 중단과 구분합니다.
++
++| 과정 | 5차의 동작 | 6차의 동작 |
++| --- | --- | --- |
++| 추가 학습 거부 | 새 전망 발행도 생략 | 채택 저장본의 운영 예측을 학습 전에 실행 |
++| 새 학습 날짜 없음 | 수집·기존 주문 처리만 지속 | 새 예측 입력이면 채택 저장본으로 예측 |
++| 같은 입력 재확인 | 새 학습 예약 없음 | 저장본·문맥·자료 해시가 같으면 모델 재로드 생략 |
++| 연속 실행 최초 수집 | PC 가동 시간이 수집 주기보다 짧으면 생략 가능 | 첫 루프는 수집하고 이후 6시간 간격 적용 |
++| 중지·저장본 손상 | 가중치 보호 | 예측 경로도 STOP·SHA-256 확인 |
++
++| 조건 | 처리 | 확인할 근거 |
++| --- | --- | --- |
++| 사용 가중치 | 채택된 latest 저장본만 사용 | 파일별 SHA-256 |
++| 새 자료 없음 | 학습 예산을 늘리지 않음 | 5차 예약 원장 보존 |
++| 같은 예측 입력 | 예측 로드를 생략 | 운영예측_6차.json 완료 해시 |
++| 예측 오류·중지 | 완료 해시 미기록 | 다음 확인에서 재시도, STOP이면 발행 차단 |
++| 실제 주문 | 연결하지 않음 | 로컬 모의계좌만 처리 |
++
++**거래·수익·과적합 부재를 보장하지 않습니다.** 기존 15개 ETF의 비용·현금·정규장·관측 신선도·중복 체결 방어를 유지합니다. 같은 날짜의 배분은 최초 신호만 사용합니다. 종목별 마지막 일봉 날짜가 다르면 기존 정책에서 가장 이른 날짜를 신호 기준으로 사용하므로 일부 종목 갱신만으로 새 배분이 발행되지 않을 수 있습니다. 날짜가 서로 다른 전망의 효과는 별도 독립 성과로 입증되지 않았습니다.
++
++예측 원장·신호·계좌·완료 기록은 하나의 트랜잭션이 아닙니다. 중간 실패 시 기존 날짜별 중복 신호와 체결 방어를 사용해 재시도하지만, STOP 파일과 발행 사이의 프로세스 간 완전한 원자성은 보장하지 않습니다.
++
++[같은 수준 프로젝트](../../docs/읽기안내/레벨2.md) · [5차 같은 수준](../../5차/docs/5차%20상세.md#user-content-reading-level-2) · [직전 전체 비교](6차%20전체%20비교.md)
++
++<a id="reading-level-3"></a>
++## LEVEL 3 - Practitioner
++
++1차 가상환경과 비공개 저장소를 공유하고 6차 실행 파일을 사용합니다. API의 forecast.status·created_at·dates와 paper.policy.as_of를 함께 확인합니다. 학습 상태와 주문 상태는 별개이며, 기존 누적 단계는 새 예측의 학습량이 아닙니다.
++
++| 과정 | 5차의 동작 | 6차의 동작 |
++| --- | --- | --- |
++| 추가 학습 거부 | 새 전망 발행도 생략 | 채택 저장본의 운영 예측을 학습 전에 실행 |
++| 새 학습 날짜 없음 | 수집·기존 주문 처리만 지속 | 새 예측 입력이면 채택 저장본으로 예측 |
++| 같은 입력 재확인 | 새 학습 예약 없음 | 저장본·문맥·자료 해시가 같으면 모델 재로드 생략 |
++| 연속 실행 최초 수집 | PC 가동 시간이 수집 주기보다 짧으면 생략 가능 | 첫 루프는 수집하고 이후 6시간 간격 적용 |
++| 중지·저장본 손상 | 가중치 보호 | 예측 경로도 STOP·SHA-256 확인 |
++
++| 조건 | 처리 | 확인할 근거 |
++| --- | --- | --- |
++| 사용 가중치 | 채택된 latest 저장본만 사용 | 파일별 SHA-256 |
++| 새 자료 없음 | 학습 예산을 늘리지 않음 | 5차 예약 원장 보존 |
++| 같은 예측 입력 | 예측 로드를 생략 | 운영예측_6차.json 완료 해시 |
++| 예측 오류·중지 | 완료 해시 미기록 | 다음 확인에서 재시도, STOP이면 발행 차단 |
++| 실제 주문 | 연결하지 않음 | 로컬 모의계좌만 처리 |
++
++**거래·수익·과적합 부재를 보장하지 않습니다.** 기존 15개 ETF의 비용·현금·정규장·관측 신선도·중복 체결 방어를 유지합니다. 같은 날짜의 배분은 최초 신호만 사용합니다. 종목별 마지막 일봉 날짜가 다르면 기존 정책에서 가장 이른 날짜를 신호 기준으로 사용하므로 일부 종목 갱신만으로 새 배분이 발행되지 않을 수 있습니다. 날짜가 서로 다른 전망의 효과는 별도 독립 성과로 입증되지 않았습니다.
++
++예측 원장·신호·계좌·완료 기록은 하나의 트랜잭션이 아닙니다. 중간 실패 시 기존 날짜별 중복 신호와 체결 방어를 사용해 재시도하지만, STOP 파일과 발행 사이의 프로세스 간 완전한 원자성은 보장하지 않습니다.
++
++[같은 수준 프로젝트](../../docs/읽기안내/레벨3.md) · [5차 같은 수준](../../5차/docs/5차%20상세.md#user-content-reading-level-3) · [직전 전체 비교](6차%20전체%20비교.md)
++
++<a id="reading-level-4"></a>
++## LEVEL 4 - Advanced
++
++예측 입력 식별자는 채택 체크포인트 메타데이터, 후보 범위 해시, 문맥 길이, 종목별 마지막 문맥 행을 canonical JSON으로 직렬화한 SHA-256입니다. 날짜뿐 아니라 같은 날짜의 입력값 수정과 저장본 변경도 감지합니다. 실제 신호는 기존 정책의 날짜·후보범위 중복 방지 규칙을 따릅니다.
++
++| 과정 | 5차의 동작 | 6차의 동작 |
++| --- | --- | --- |
++| 추가 학습 거부 | 새 전망 발행도 생략 | 채택 저장본의 운영 예측을 학습 전에 실행 |
++| 새 학습 날짜 없음 | 수집·기존 주문 처리만 지속 | 새 예측 입력이면 채택 저장본으로 예측 |
++| 같은 입력 재확인 | 새 학습 예약 없음 | 저장본·문맥·자료 해시가 같으면 모델 재로드 생략 |
++| 연속 실행 최초 수집 | PC 가동 시간이 수집 주기보다 짧으면 생략 가능 | 첫 루프는 수집하고 이후 6시간 간격 적용 |
++| 중지·저장본 손상 | 가중치 보호 | 예측 경로도 STOP·SHA-256 확인 |
++
++| 조건 | 처리 | 확인할 근거 |
++| --- | --- | --- |
++| 사용 가중치 | 채택된 latest 저장본만 사용 | 파일별 SHA-256 |
++| 새 자료 없음 | 학습 예산을 늘리지 않음 | 5차 예약 원장 보존 |
++| 같은 예측 입력 | 예측 로드를 생략 | 운영예측_6차.json 완료 해시 |
++| 예측 오류·중지 | 완료 해시 미기록 | 다음 확인에서 재시도, STOP이면 발행 차단 |
++| 실제 주문 | 연결하지 않음 | 로컬 모의계좌만 처리 |
++
++**거래·수익·과적합 부재를 보장하지 않습니다.** 기존 15개 ETF의 비용·현금·정규장·관측 신선도·중복 체결 방어를 유지합니다. 같은 날짜의 배분은 최초 신호만 사용합니다. 종목별 마지막 일봉 날짜가 다르면 기존 정책에서 가장 이른 날짜를 신호 기준으로 사용하므로 일부 종목 갱신만으로 새 배분이 발행되지 않을 수 있습니다. 날짜가 서로 다른 전망의 효과는 별도 독립 성과로 입증되지 않았습니다.
++
++예측 원장·신호·계좌·완료 기록은 하나의 트랜잭션이 아닙니다. 중간 실패 시 기존 날짜별 중복 신호와 체결 방어를 사용해 재시도하지만, STOP 파일과 발행 사이의 프로세스 간 완전한 원자성은 보장하지 않습니다.
++
++[같은 수준 프로젝트](../../docs/읽기안내/레벨4.md) · [5차 같은 수준](../../5차/docs/5차%20상세.md#user-content-reading-level-4) · [직전 전체 비교](6차%20전체%20비교.md)
++
++<a id="reading-level-5"></a>
++## LEVEL 5 - Expert
++
++refresh_live_forecasts → _publish_saved_forecasts → publish_forecasts를 run_loop의 train_round 이전에 호출합니다. latest.json의 체크포인트 파일 해시를 확인하고 local_files_only로 로드하며 eval과 inference_mode에서 실행합니다. fit·optimizer·시험 평가를 호출하지 않습니다. 성공 이후 운영예측_6차.json을 원자 저장합니다. 예측 실패·STOP이면 완료 해시를 남기지 않아 다음 실행에서 재시도합니다.
++
++| 과정 | 5차의 동작 | 6차의 동작 |
++| --- | --- | --- |
++| 추가 학습 거부 | 새 전망 발행도 생략 | 채택 저장본의 운영 예측을 학습 전에 실행 |
++| 새 학습 날짜 없음 | 수집·기존 주문 처리만 지속 | 새 예측 입력이면 채택 저장본으로 예측 |
++| 같은 입력 재확인 | 새 학습 예약 없음 | 저장본·문맥·자료 해시가 같으면 모델 재로드 생략 |
++| 연속 실행 최초 수집 | PC 가동 시간이 수집 주기보다 짧으면 생략 가능 | 첫 루프는 수집하고 이후 6시간 간격 적용 |
++| 중지·저장본 손상 | 가중치 보호 | 예측 경로도 STOP·SHA-256 확인 |
++
++| 조건 | 처리 | 확인할 근거 |
++| --- | --- | --- |
++| 사용 가중치 | 채택된 latest 저장본만 사용 | 파일별 SHA-256 |
++| 새 자료 없음 | 학습 예산을 늘리지 않음 | 5차 예약 원장 보존 |
++| 같은 예측 입력 | 예측 로드를 생략 | 운영예측_6차.json 완료 해시 |
++| 예측 오류·중지 | 완료 해시 미기록 | 다음 확인에서 재시도, STOP이면 발행 차단 |
++| 실제 주문 | 연결하지 않음 | 로컬 모의계좌만 처리 |
++
++**거래·수익·과적합 부재를 보장하지 않습니다.** 기존 15개 ETF의 비용·현금·정규장·관측 신선도·중복 체결 방어를 유지합니다. 같은 날짜의 배분은 최초 신호만 사용합니다. 종목별 마지막 일봉 날짜가 다르면 기존 정책에서 가장 이른 날짜를 신호 기준으로 사용하므로 일부 종목 갱신만으로 새 배분이 발행되지 않을 수 있습니다. 날짜가 서로 다른 전망의 효과는 별도 독립 성과로 입증되지 않았습니다.
++
++예측 원장·신호·계좌·완료 기록은 하나의 트랜잭션이 아닙니다. 중간 실패 시 기존 날짜별 중복 신호와 체결 방어를 사용해 재시도하지만, STOP 파일과 발행 사이의 프로세스 간 완전한 원자성은 보장하지 않습니다.
++
++[같은 수준 프로젝트](../../docs/읽기안내/레벨5.md) · [5차 같은 수준](../../5차/docs/5차%20상세.md#user-content-reading-level-5) · [직전 전체 비교](6차%20전체%20비교.md)
++
+diff --git a/6차/docs/REVISION_INDEX.md b/6차/docs/REVISION_INDEX.md
+new file mode 100644
+index 0000000..034794c
+--- /dev/null
++++ b/6차/docs/REVISION_INDEX.md
+@@ -0,0 +1,13 @@
++# 전체 차수
++
++| 차수 | 자료 | 상세 | 직전 비교 |
++| --- | --- | --- | --- |
++| 1차 | [1차](../../1차/) | [설명](../../1차/docs/1차%20상세.md) | [전체 비교](../../1차/docs/1차%20전체%20비교.md) |
++| 2차 | [2차](../../2차/) | [설명](../../2차/docs/2차%20상세.md) | [전체 비교](../../2차/docs/2차%20전체%20비교.md) |
++| 3차 | [3차](../../3차/) | [설명](../../3차/docs/3차%20상세.md) | [전체 비교](../../3차/docs/3차%20전체%20비교.md) |
++| 4차 | [4차](../../4차/) | [설명](../../4차/docs/4차%20상세.md) | [전체 비교](../../4차/docs/4차%20전체%20비교.md) |
++| 5차 | [5차](../../5차/) | [설명](../../5차/docs/5차%20상세.md) | [전체 비교](../../5차/docs/5차%20전체%20비교.md) |
++| 6차 | [6차](../../6차/) | [설명](../../6차/docs/6차%20상세.md) | [전체 비교](../../6차/docs/6차%20전체%20비교.md) |
++| 최종 | [기존 최종](../../최종/) | [사용 안내](../../최종/사용%20안내.md) | [기존 구성](../../3차/docs/최종%20구성.md) |
++
++최종은 기존 납품본이며 6차로 자동 교체하지 않았습니다.
+diff --git a/6차/requirements.txt b/6차/requirements.txt
+new file mode 100644
+index 0000000..b6f8781
+--- /dev/null
++++ b/6차/requirements.txt
+@@ -0,0 +1,7 @@
++torch==2.6.0
++chronos-forecasting==2.2.2
++transformers>=4.48,<5
++accelerate>=1.1,<2
++pandas>=2,<3
++yfinance>=0.2.65,<1
++peft>=0.18.1,<1
+diff --git a/6차/run_pipeline.py b/6차/run_pipeline.py
+new file mode 100644
+index 0000000..566f4a2
+--- /dev/null
++++ b/6차/run_pipeline.py
+@@ -0,0 +1,127 @@
++"""단일 작업과 중지 가능한 지속 학습 루프의 명령 진입점입니다."""
++
++import argparse
++from datetime import datetime, timedelta, timezone
++import time
++import subprocess
++import sys
++
++from src.core import now_iso
++from src.market import load_market, refresh_market
++from src.modeling import reconcile_forward, train_round
++from src.paper import reconcile_paper
++from src.runtime import ENV_ROOT, PRIVATE, ROOT, STOP, initial_state, load_config, log, record_failure, update_state, worker_lock
++from src.intraday import market_monitor
++
++
++def wait_cooperatively(seconds):
++    until = time.monotonic() + seconds
++    while time.monotonic() < until:
++        if STOP.exists():
++            return False
++        time.sleep(min(1, max(0, until - time.monotonic())))
++    return not STOP.exists()
++
++
++def fatal_cuda(error):
++    message = str(error).lower()
++    return isinstance(error, RuntimeError) and "cuda error:" in message and any(
++        marker in message for marker in ("unspecified launch failure", "device-side assert",
++                                        "illegal memory access", "the launch timed out", "illegal instruction"))
++
++
++def supervise():
++    """치명 CUDA 문맥을 폐기하고 마지막 저장 가중치로 새 작업을 시작합니다."""
++    with worker_lock(PRIVATE / "운용감시잠금"):
++        failures = 0
++        while not STOP.exists():
++            executable = ENV_ROOT / ".venv" / "Scripts" / "python.exe"
++            command = [str(executable) if executable.is_file() else sys.executable,
++                       "-B", "-X", "utf8", str(ROOT / "run_pipeline.py"), "start", "--worker"]
++            started = time.monotonic()
++            result = subprocess.run(command, cwd=ROOT, shell=False,
++                                    creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
++            if STOP.exists():
++                return 0
++            if result.returncode != 75:
++                return result.returncode
++            failures = 1 if time.monotonic() - started >= 300 else failures + 1
++            delay = min(300, 30 * 2 ** min(failures - 1, 4))
++            message = f"치명 CUDA 오류로 프로세스를 종료했습니다. {delay}초 뒤 마지막 저장 가중치에서 재실행합니다."
++            log(message, "error")
++            update_state(job={"status": "backoff", "continuous": True, "message": message,
++                              "next_run_at": (datetime.now(timezone.utc) + timedelta(seconds=delay)).isoformat()})
++            if not wait_cooperatively(delay):
++                return 0
++        return 0
++
++
++def run(action):
++    with worker_lock():
++        config = load_config()
++        continuous = action == "start"
++        monitor_enabled = continuous and bool(config.get("autotrading", {}).get("enabled", False))
++        last_refresh = 0.0
++        errors = 0
++        update_state(notes=initial_state()["notes"], job={"status": "running", "action": action, "continuous": continuous,
++                          "message": "로컬 작업 실행 중", "next_run_at": None})
++        with market_monitor(monitor_enabled):
++            return run_loop(action, config, continuous, last_refresh, errors)
++
++
++def run_loop(action, config, continuous, last_refresh, errors):
++    while not STOP.exists():
++        try:
++            update_state(job={"status": "running", "message": "수집·학습 작업을 실행하고 있습니다", "next_run_at": None})
++            market = load_market()
++            if action == "refresh" or not market["series"] or set(market["series"]) != set(config.get("symbols", market["series"])) or (continuous and (last_refresh == 0 or time.monotonic() - last_refresh >= config.get("refresh_seconds", 21600))):
++                market = refresh_market()
++                last_refresh = time.monotonic()
++            reconcile_forward(market["series"])
++            reconcile_paper(market["series"])
++            if not STOP.exists():
++                # 추가 학습이 거부되거나 새 학습 날짜가 없어도 운영 저장본으로 새 자료를 예측합니다.
++                from src.modeling import refresh_live_forecasts
++                refresh_live_forecasts()
++            if action != "refresh" and not STOP.exists():
++                train_round()
++            errors = 0
++            if not continuous:
++                break
++            # 새 관측이 없으면 추가 fit을 하지 않으며 감시 스레드의 수집·모의운용은 유지합니다.
++            delay = 300
++            update_state(job={"status": "running", "message": "새 관측과 다음 수집 점검을 기다립니다 · 모의운용 계속",
++                              "next_run_at": (datetime.now(timezone.utc) + timedelta(seconds=delay)).isoformat()})
++            if not wait_cooperatively(delay):
++                break
++        except InterruptedError as error:
++            log(str(error))
++            break
++        except Exception as error:
++            record_failure(error)
++            errors += 1
++            log(str(error), "error")
++            update_state(training={"status": "error"}, data={"status": "error"} if not load_market()["series"] else {},
++                         job={"status": "error", "message": str(error)})
++            if continuous and fatal_cuda(error):
++                # 손상된 문맥에서 현재 미저장 가중치를 커밋하지 않습니다.
++                return 75
++            if not continuous:
++                raise
++            delay = min(3600, 60 * 2 ** min(errors - 1, 6))
++            update_state(job={"status": "backoff", "message": f"오류 후 {delay}초 대기 · 원문을 비공개 기록에 보존",
++                              "next_run_at": (datetime.now(timezone.utc) + timedelta(seconds=delay)).isoformat()})
++            if not wait_cooperatively(delay):
++                break
++    stopped = STOP.exists()
++    update_state(job={"status": "stopped" if stopped else "idle", "message": "사용자 요청으로 중지했습니다" if stopped else "요청 작업을 마쳤습니다",
++                      "continuous": False, "next_run_at": None},
++                 training={"status": "stopped"} if stopped else {})
++
++
++if __name__ == "__main__":
++    parser = argparse.ArgumentParser()
++    parser.add_argument("action", choices=["refresh", "train", "start"])
++    parser.add_argument("--worker", action="store_true", help=argparse.SUPPRESS)
++    args = parser.parse_args()
++    raise SystemExit(supervise() if args.action == "start" and not args.worker else run(args.action))
+diff --git a/6차/server.py b/6차/server.py
+new file mode 100644
+index 0000000..ca52440
+--- /dev/null
++++ b/6차/server.py
+@@ -0,0 +1,169 @@
++"""외부 공개·실제 주문 없이 loopback에서만 실행하는 대시보드 서버입니다."""
++
++import argparse
++from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
++import json
++import mimetypes
++from pathlib import Path
++import subprocess
++import sys
++import threading
++from urllib.parse import parse_qs, unquote, urlsplit
++
++from src.runtime import ENV_ROOT, PRIVATE, ROOT, STOP, is_busy, load_state, update_state
++from src.core import read_json
++from src.paper import ACCOUNT
++from src.autotrading import account_view, trade_page
++
++
++class JobManager:
++    def __init__(self):
++        self.process = None
++        self.lock = threading.Lock()
++
++    def launch(self, action):
++        with self.lock:
++            if action == "stop":
++                PRIVATE.mkdir(parents=True, exist_ok=True)
++                STOP.write_text("사용자 중지 요청\n", encoding="utf-8")
++                return True, "중지 요청을 전달했습니다. 현재 학습 단계 저장 후 멈춥니다."
++            if (self.process and self.process.poll() is None) or is_busy():
++                return False, "수집·학습 작업이 이미 실행 중입니다. 중복 실행하지 않습니다."
++            PRIVATE.mkdir(parents=True, exist_ok=True)
++            STOP.unlink(missing_ok=True)
++            executable = ENV_ROOT / ".venv" / "Scripts" / "python.exe"
++            if not executable.exists():
++                return False, "프로젝트 .venv가 없습니다. requirements.txt에 따라 설치해 주세요."
++            update_state(job={"status": "starting", "action": action, "continuous": action == "start",
++                              "message": "로컬 작업을 시작하고 있습니다", "next_run_at": None})
++            with (PRIVATE / "작업출력.log").open("a", encoding="utf-8") as output:
++                self.process = subprocess.Popen([str(executable), "-B", "-X", "utf8", str(ROOT / "run_pipeline.py"), action],
++                    cwd=ROOT, stdout=output, stderr=subprocess.STDOUT,
++                    creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
++            return True, "계속 학습·모의운용을 시작했습니다" if action == "start" else "작업을 시작했습니다"
++
++
++def make_server(port=8879):
++    manager = JobManager()
++    web = (ROOT / "web").resolve()
++
++    class Handler(BaseHTTPRequestHandler):
++        server_version = "LocalETF/1.0"
++
++        def log_message(self, fmt, *args):
++            # API 폴링을 매초 디스크에 기록하지 않습니다.
++            return
++
++        def send_bytes(self, status, body, content_type="application/json; charset=utf-8"):
++            self.send_response(status)
++            self.send_header("Content-Type", content_type)
++            self.send_header("Content-Length", str(len(body)))
++            self.send_header("Cache-Control", "no-store")
++            self.send_header("X-Content-Type-Options", "nosniff")
++            self.send_header("Referrer-Policy", "no-referrer")
++            self.send_header("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'")
++            self.end_headers()
++            try:
++                self.wfile.write(body)
++            except (BrokenPipeError, ConnectionResetError):
++                pass
++
++        def reply(self, status, payload):
++            self.send_bytes(status, json.dumps(payload, ensure_ascii=False, allow_nan=False).encode("utf-8"))
++
++        def valid_host(self):
++            return self.headers.get("Host") in {f"127.0.0.1:{self.server.server_port}", f"localhost:{self.server.server_port}"}
++
++        def do_GET(self):
++            if not self.valid_host():
++                self.reply(403, {"error": "로컬 Host만 허용합니다"})
++                return
++            route = unquote(urlsplit(self.path).path)
++            if route == "/api/state":
++                state = load_state()
++                account = read_json(ACCOUNT)
++                if account is not None:
++                    state["paper"] = account_view(account)
++                state["worker_alive"] = is_busy()
++                self.reply(200, state)
++                return
++            if route == "/api/trades":
++                try:
++                    query = parse_qs(urlsplit(self.path).query, keep_blank_values=True, strict_parsing=True)
++                    if set(query) - {"offset", "limit", "side"} or any(len(values) != 1 for values in query.values()):
++                        raise ValueError("중복 또는 지원하지 않는 조회 항목입니다")
++                    offset = int(query.get("offset", ["0"])[0])
++                    limit = int(query.get("limit", ["50"])[0])
++                    side = query.get("side", ["all"])[0]
++                    self.reply(200, trade_page(read_json(ACCOUNT, {"trades": [], "positions": []}), offset, limit, side))
++                except (ValueError, TypeError) as error:
++                    self.reply(400, {"error": str(error)})
++                return
++            if route.startswith("/api/"):
++                self.reply(404, {"error": "지원하지 않는 API입니다"})
++                return
++            target = (web / ("index.html" if route == "/" else route.lstrip("/"))).resolve()
++            try:
++                target.relative_to(web)
++            except ValueError:
++                self.reply(404, {"error": "파일을 찾을 수 없습니다"})
++                return
++            if not target.is_file():
++                self.reply(404, {"error": "파일을 찾을 수 없습니다"})
++                return
++            content_type = mimetypes.guess_type(target.name)[0] or "application/octet-stream"
++            if content_type.startswith("text/") or target.suffix == ".js":
++                content_type += "; charset=utf-8"
++            self.send_bytes(200, target.read_bytes(), content_type)
++
++        def do_POST(self):
++            if not self.valid_host() or self.headers.get("X-Local-Request") != "1":
++                self.reply(403, {"error": "로컬 화면의 요청만 허용합니다"})
++                return
++            origin = self.headers.get("Origin")
++            if origin and origin != f"http://{self.headers.get('Host')}":
++                self.reply(403, {"error": "다른 출처의 변경 요청은 허용하지 않습니다"})
++                return
++            if urlsplit(self.path).path != "/api/jobs":
++                self.reply(404, {"error": "지원하지 않는 API입니다"})
++                return
++            try:
++                length = int(self.headers.get("Content-Length", "0"))
++                if length <= 0 or length > 4096:
++                    raise ValueError("요청 크기가 유효하지 않습니다")
++                if self.headers.get_content_type() != "application/json":
++                    raise ValueError("JSON 요청이 필요합니다")
++                payload = json.loads(self.rfile.read(length).decode("utf-8"))
++                if not isinstance(payload, dict) or set(payload) != {"action"} or payload["action"] not in ("refresh", "train", "stop", "start"):
++                    raise ValueError("지원하는 작업은 refresh/train/stop/start입니다")
++            except (ValueError, UnicodeError) as error:
++                self.reply(400, {"error": str(error)})
++                return
++            accepted, message = manager.launch(payload["action"])
++            self.reply(202 if accepted else 409, {"accepted": accepted, "message": message, "state": load_state()})
++
++    server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
++    server.daemon_threads = True
++    server.manager = manager
++    return server
++
++
++def main():
++    parser = argparse.ArgumentParser()
++    parser.add_argument("--port", type=int, default=8879)
++    parser.add_argument("--continuous", action="store_true")
++    args = parser.parse_args()
++    server = make_server(args.port)
++    print(f"로컬 대시보드 http://127.0.0.1:{server.server_port}", flush=True)
++    if args.continuous:
++        print(server.manager.launch("start")[1], flush=True)
++    try:
++        server.serve_forever()
++    except KeyboardInterrupt:
++        STOP.write_text("서버 종료에 따른 작업 중지\n", encoding="utf-8")
++    finally:
++        server.server_close()
++
++
++if __name__ == "__main__":
++    main()
+diff --git a/6차/src/__init__.py b/6차/src/__init__.py
+new file mode 100644
+index 0000000..ec8bd77
+--- /dev/null
++++ b/6차/src/__init__.py
+@@ -0,0 +1 @@
++"""장기투자 모의운용의 비공개 로컬 실행 모듈입니다."""
+diff --git a/6차/src/autotrading.py b/6차/src/autotrading.py
+new file mode 100644
+index 0000000..3b66163
+--- /dev/null
++++ b/6차/src/autotrading.py
+@@ -0,0 +1,341 @@
++"""주문·새 정규장 관측·원가 원장을 분리한 자동 모의매매입니다."""
++
++from copy import deepcopy
++from datetime import datetime, timezone
++import hashlib
++import math
++import threading
++
++from .core import now_iso, read_json, save_json
++from .fees import POLICY, affordable_quantity, convert_won, floor_quantity, trade_fees
++from .runtime import PRIVATE, load_config, update_state
++from .universe import DEFAULT_POLICY, SYMBOLS, UNIVERSE_HASH, universe
++
++
++ACCOUNT_MUTEX = threading.RLock()
++POLICY_NAME = "Chronos-2 전망과 비용을 비교한 ETF·현금 배분"
++
++
++def timestamp(value):
++    parsed = datetime.fromisoformat(value)
++    if parsed.tzinfo is None:
++        raise ValueError("시세와 주문 시각에는 시간대가 필요합니다")
++    return parsed.astimezone(timezone.utc)
++
++
++def select_allocation(forecasts, equity_usd, policy=None):
++    policy = {**DEFAULT_POLICY, **(policy or {})}
++    scores, reasons = {}, {}
++    budget = max(1, float(equity_usd) * (1 - policy["cash_reserve"]) / policy["max_positions"])
++    # 예상 왕복 일반 수수료와 최소 SEC를 보수적으로 비교합니다. 실제 비용은 체결 때 따로 계산합니다.
++    cost = 0.002 + 0.01 / budget
++    for row in forecasts:
++        symbol = row["symbol"]
++        predicted, previous = float(row["adjusted_price"]), float(row["last_adjusted_price"])
++        if symbol not in SYMBOLS or not all(math.isfinite(v) and v > 0 for v in (predicted, previous)):
++            raise ValueError("후보 범위와 유한한 양의 모델 전망을 확인해 주세요")
++        change = predicted / previous - 1
++        edge = change - cost
++        scores[symbol] = max(0.0, edge) if edge >= policy["minimum_edge"] else 0.0
++        reasons[symbol] = f"모델 1거래일 변화 전망 {change:.3%}, 예상 왕복비용 {cost:.3%}, 비용 차감 여유 {edge:.3%}"
++    selected = sorted((s for s in scores if scores[s] > 0), key=lambda s: (-scores[s], s))[:policy["max_positions"]]
++    total = sum(scores[s] for s in selected)
++    weights = {s: min(policy["max_weight"], (1 - policy["cash_reserve"]) * scores[s] / total)
++               if s in selected else 0.0 for s in scores}
++    for symbol in reasons:
++        reasons[symbol] += " · 배분 대상" if weights[symbol] else " · 비용 기준 미달 또는 상위 후보 외, 현금/기존 보유 축소"
++    return {"weights": weights, "cash_weight": max(0.0, 1 - sum(weights.values())), "reasons": reasons,
++            "name": POLICY_NAME, "description": "최대 3개 ETF, 종목당 최대45%, 현금 최소10%; 전망 부족 시 전액 현금",
++            "max_positions": policy["max_positions"], "policy_version": 3, "universe_hash": UNIVERSE_HASH}
++
++
++def migrate_account(account):
++    # 기존 현금·체결·환전 원본은 보존하고 없는 표시 필드만 보강합니다.
++    account.setdefault("orders", [])
++    account.setdefault("trades", [])
++    account.setdefault("cash_movements", [])
++    account.setdefault("processed_signal_ids", [])
++    account.setdefault("corporate_actions_through", {})
++    account.setdefault("realized_pnl_krw", 0.0)
++    account.setdefault("fees_usd", 0.0)
++    account.setdefault("fees_krw", 0.0)
++    account["schema_version"] = 3
++    for position in account.get("positions", []):
++        position.setdefault("name", SYMBOLS.get(position["symbol"], position["symbol"]))
++        for key in ("average_cost_usd", "cost_basis_usd", "cost_basis_krw", "unrealized_pnl_krw", "unrealized_pnl_pct"):
++            position.setdefault(key, None)
++    for index, trade in enumerate(account["trades"]):
++        trade.setdefault("id", "legacy-" + hashlib.sha256(f"{index}:{trade}".encode()).hexdigest()[:20])
++        trade.setdefault("name", SYMBOLS.get(trade["symbol"], trade["symbol"]))
++        trade.setdefault("executed_at", trade.get("execution_open_utc"))
++        trade.setdefault("reason", None)
++        trade.setdefault("realized_pnl_krw", None)
++        trade.setdefault("assumption", None)
++    receipt = account.get("fx_receipt")
++    if receipt and not any(row.get("id") == "initial-fx" for row in account["cash_movements"]):
++        account["cash_movements"].append({"id": "initial-fx", "type": "환전", "created_at": receipt.get("created_at"),
++            "amount_krw": receipt.get("initial_krw", account.get("initial_capital_krw")),
++            "amount_usd": receipt.get("received_usd", account.get("initial_value_usd")),
++            "fee_krw": receipt.get("cost_krw"), "rate": receipt.get("rate", account.get("initial_fx")),
++            "receipt": deepcopy(receipt)})
++    return account
++
++
++def fund_account(account, fx, spread_bps):
++    migrate_account(account)
++    if account.get("cash_usd") is not None or not fx:
++        return account
++    receipt = convert_won(account["cash_krw"], fx["rate"], spread_bps)
++    account.update(cash_krw=0, cash_usd=receipt["received_usd"], initial_fx=fx["rate"],
++                   initial_value_usd=receipt["received_usd"], exchange_cost_krw=receipt["cost_krw"],
++                   fx_receipt={**receipt, "source": fx["source"], "as_of": fx["as_of"], "created_at": now_iso()})
++    migrate_account(account)
++    return account
++
++
++def queue_orders(account, signal, prices):
++    migrate_account(account)
++    if signal.get("policy_version") != 3 or signal["id"] in account["processed_signal_ids"]:
++        return account
++    weights = signal["weights"]
++    if any(s not in SYMBOLS or not math.isfinite(float(w)) or w < 0 for s, w in weights.items()) or sum(weights.values()) > 1 + 1e-9:
++        raise ValueError("후보 밖 종목·공매도·현금 초과 배분은 허용하지 않습니다")
++    for order in account["orders"]:
++        if order["status"] == "pending":
++            order.update(status="cancelled", cancelled_at=signal["created_at"], cancel_reason="새 3차 정책 신호로 미체결 주문을 대체했습니다")
++    positions = {p["symbol"]: p for p in account["positions"]}
++    wealth = account.get("cash_usd")
++    if wealth is None:
++        return account
++    for symbol, position in positions.items():
++        price = prices.get(symbol, position.get("price_usd"))
++        if price is None or not math.isfinite(float(price)) or price <= 0:
++            raise ValueError("기존 보유의 유효한 기준 가격이 없어 신규 배분을 대기합니다")
++        wealth += position["quantity"] * price
++    for symbol in sorted(set(weights) | set(positions)):
++        price = prices.get(symbol)
++        if price is None or not math.isfinite(float(price)) or price <= 0:
++            continue
++        existing = positions.get(symbol, {}).get("quantity", 0)
++        target = wealth * weights.get(symbol, 0) / price
++        difference = target - existing
++        quantity = floor_quantity(abs(difference))
++        if quantity <= 0:
++            continue
++        side = "매수" if difference > 0 else "매도"
++        account["orders"].append({"id": f"{signal['id']}:{symbol}:{side}", "signal_id": signal["id"],
++            "symbol": symbol, "name": SYMBOLS.get(symbol, symbol), "side": side, "quantity": quantity,
++            "target_weight": weights.get(symbol, 0), "status": "pending", "created_at": signal["created_at"],
++            "policy_version": 3, "universe_hash": signal.get("universe_hash"),
++            "reason": signal.get("reasons", {}).get(symbol, "선택 대상에서 제외되어 보유를 줄입니다"),
++            "waiting_reason": "주문 생성 뒤 시작된 새 정규장 완결 1분 관측을 기다립니다"})
++    account["processed_signal_ids"].append(signal["id"])
++    account["policy"] = {key: signal.get(key) for key in ("name", "description", "max_positions", "cash_weight", "policy_version", "universe_hash")}
++    account["policy"].update(as_of=signal["created_at"], waiting_reason=None)
++    return account
++
++
++def quote_waiting_reason(quote, created_at, current, max_age=1200):
++    if quote is None:
++        return "해당 ETF의 무료 단기 시세를 확보하지 못했습니다"
++    try:
++        now, created = timestamp(current), timestamp(created_at)
++        start, end, fetched = (timestamp(quote[k]) for k in ("bar_start", "bar_end", "fetched_at"))
++        opening, closing = timestamp(quote["session_open"]), timestamp(quote["session_close"])
++        if not math.isfinite(float(quote["price"])) or quote["price"] <= 0:
++            return "유효한 양의 관측 가격이 없습니다"
++        if quote.get("interval_seconds") not in (60, 300) or (end - start).total_seconds() != quote["interval_seconds"]:
++            return "완결 1~5분봉이 아닙니다"
++        if not quote.get("regular_session") or not opening <= start < end <= closing:
++            return "정규장 관측이 아닙니다"
++        if not opening <= now < closing:
++            return "현재 미국 정규장이 열려 있지 않습니다"
++        if start <= created:
++            return "주문 생성 뒤 시작된 새 관측이 아직 없습니다"
++        if end > now or fetched > now or fetched < end:
++            return "미래 시각 또는 아직 완결되지 않은 관측입니다"
++        if (now - end).total_seconds() > max_age or (now - fetched).total_seconds() > max_age:
++            return "무료 관측이 허용 지연 20분을 넘었습니다"
++    except (ValueError, TypeError, KeyError):
++        return "시세 시간대·정규장·가격 메타데이터가 불완전합니다"
++    return None
++
++
++def fill_orders(account, quotes, fx, current=None, max_age=1200):
++    migrate_account(account)
++    current = current or now_iso()
++    positions = {p["symbol"]: p for p in account["positions"] if p["quantity"] > 0}
++    completed = {trade["id"] for trade in account["trades"]}
++    for order in sorted(account["orders"], key=lambda row: row.get("side") != "매도"):
++        if order["status"] != "pending":
++            continue
++        if order["id"] in completed:
++            order["status"] = "filled"
++            continue
++        symbol = order["symbol"]
++        quote = quotes.get(symbol)
++        waiting = quote_waiting_reason(quote, order["created_at"], current, max_age)
++        if not fx or account.get("cash_usd") is None:
++            waiting = "실제 시장 환율·달러 현금 확보 전 체결 대기"
++        elif not math.isfinite(float(fx["rate"])) or fx["rate"] <= 0 or fx.get("as_of", "9999") > current[:10]:
++            waiting = "유효한 현재 또는 이전 관측 환율이 없습니다"
++        if waiting:
++            order["waiting_reason"] = waiting
++            continue
++        price, rate = float(quote["price"]), float(fx["rate"])
++        existing = positions.get(symbol, {}).get("quantity", 0)
++        side = "sell" if order["side"] == "매도" else "buy"
++        quantity = floor_quantity(min(existing, order["quantity"])) if side == "sell" else affordable_quantity(account["cash_usd"], price, order["quantity"])
++        if quantity <= 0:
++            order.update(status="cancelled", cancelled_at=current, cancel_reason="매도 가능 보유 또는 비용 포함 가용 달러가 부족합니다")
++            continue
++        amount = quantity * price
++        fees = trade_fees(amount, side)
++        fee = fees["total_usd"]
++        if side == "sell" and amount <= fee:
++            order["waiting_reason"] = "매도 대금이 공시 최소 비용보다 작아 체결을 대기합니다"
++            continue
++        position = positions.get(symbol, {"symbol": symbol, "name": SYMBOLS.get(symbol, symbol), "quantity": 0,
++                                           "cost_basis_usd": 0.0, "cost_basis_krw": 0.0})
++        old_cost, old_krw = position.get("cost_basis_usd"), position.get("cost_basis_krw")
++        realized = None
++        if side == "buy":
++            new_cost = old_cost + amount + fee if old_cost is not None else None
++            new_krw = old_krw + (amount + fee) * rate if old_krw is not None else None
++            new_quantity = existing + quantity
++        else:
++            fraction = quantity / existing
++            released = old_krw * fraction if old_krw is not None else None
++            realized = (amount - fee) * rate - released if released is not None else None
++            new_cost = old_cost * (1 - fraction) if old_cost is not None else None
++            new_krw = old_krw * (1 - fraction) if old_krw is not None else None
++            new_quantity = max(0, existing - quantity)
++        account["cash_usd"] += amount - fee if side == "sell" else -amount - fee
++        if account["cash_usd"] < -1e-8:
++            raise ArithmeticError("비용을 포함한 모의 주문이 가용 현금을 초과했습니다")
++        account["cash_usd"] = max(0.0, account["cash_usd"])
++        if new_quantity > 1e-9:
++            position.update(quantity=new_quantity, price_usd=price, cost_basis_usd=new_cost, cost_basis_krw=new_krw,
++                            average_cost_usd=new_cost / new_quantity if new_cost is not None else None)
++            positions[symbol] = position
++        else:
++            positions.pop(symbol, None)
++        trade = {"id": order["id"], "order_id": order["id"], "symbol": symbol, "name": SYMBOLS.get(symbol, symbol),
++                 "side": order["side"], "executed_at": quote["bar_end"], "recorded_at": current,
++                 "quantity": quantity, "price_usd": price, "amount_usd": amount, "amount_krw": amount * rate,
++                 "fee_usd": fee, "fee_krw": fee * rate, **fees, "fx_rate": rate, "fx_as_of": fx["as_of"],
++                 "reason": order["reason"], "realized_pnl_krw": realized, "signal_created_at": order["created_at"],
++                 "quote": deepcopy(quote), "execution_date": quote["bar_end"][:10],
++                 "assumption": "무료 지연 정규장 완결 1분 종가 가상체결; 실제 토스 호가·주문·체결 아님, 소수점 6자리 가정"}
++        account["trades"].append(trade)
++        account["fees_usd"] += fee
++        account["fees_krw"] += fee * rate
++        if realized is not None:
++            account["realized_pnl_krw"] += realized
++        order.update(status="filled", executed_at=quote["bar_end"], filled_quantity=quantity, waiting_reason=None)
++    account["positions"] = list(positions.values())
++    return account
++
++
++def apply_corporate_actions(account, series):
++    migrate_account(account)
++    positions = {p["symbol"]: p for p in account["positions"]}
++    through = account["corporate_actions_through"]
++    for symbol, rows in series.items():
++        previous = through.get(symbol, account.get("last_processed", account.get("as_of", "9999")))
++        position = positions.get(symbol)
++        for row in sorted(rows, key=lambda r: r["date"]):
++            if row["date"] <= previous or position is None:
++                continue
++            split = row.get("split", 0)
++            if split > 0:
++                position["quantity"] *= split
++                if position.get("cost_basis_usd") is not None:
++                    position["average_cost_usd"] = position["cost_basis_usd"] / position["quantity"]
++            if account.get("cash_usd") is not None:
++                account["cash_usd"] += position["quantity"] * row.get("dividend", 0)
++        if rows:
++            through[symbol] = max(previous, max(row["date"] for row in rows))
++    return account
++
++
++def account_view(account):
++    public = migrate_account(deepcopy(account))
++    public["trade_count"] = len(public["trades"])
++    public["trades"] = list(reversed(public["trades"][-100:]))
++    public["orders"] = list(reversed(public["orders"][-100:]))
++    public["universe"] = universe()
++    public.setdefault("policy", {"name": POLICY_NAME, "description": "동일 latest 모델에서 전망한 최대3개 ETF와 현금", "max_positions": 3,
++                                  "cash_weight": None, "as_of": None, "waiting_reason": "새 3차 모델 전망 생성 대기"})
++    if public.get("fx"):
++        public["fx"] = {k: v for k, v in public["fx"].items() if k != "rates"}
++    for key in ("processed_signal_ids", "corporate_actions_through", "last_processed", "last_signal_id"):
++        public.pop(key, None)
++    return public
++
++
++def trade_page(account, offset=0, limit=50, side="all"):
++    if type(offset) is not int or offset < 0 or type(limit) is not int or not 1 <= limit <= 100 or side not in ("all", "buy", "sell"):
++        raise ValueError("offset은 0이상, limit은 1~100, side는 all/buy/sell이어야 합니다")
++    normalized = migrate_account(deepcopy(account))
++    wanted = {"buy": "매수", "sell": "매도"}.get(side)
++    trades = [row for row in reversed(normalized["trades"]) if wanted is None or row["side"] == wanted]
++    return {"total": len(trades), "offset": offset, "limit": limit, "trades": trades[offset:offset + limit], "as_of": now_iso()}
++
++
++def reconcile(series, quotes=None):
++    from .paper import ACCOUNT, FX, create_account, mark_account
++    config = load_config()
++    with ACCOUNT_MUTEX:
++        fx = read_json(FX)
++        account = read_json(ACCOUNT)
++        if account is None:
++            latest = min((rows[-1]["date"] for rows in series.values() if rows), default=now_iso()[:10])
++            account = create_account(fx, latest)
++        from .fees import fx_spread_bps
++        fund_account(account, fx, fx_spread_bps())
++        migrate_account(account)
++        apply_corporate_actions(account, series)
++        prices = {s: rows[-1].get("raw_close", rows[-1]["close"]) for s, rows in series.items() if rows}
++        signals = read_json(PRIVATE / "모의신호.json", [])
++        eligible = [row for row in signals if row.get("policy_version") == 3 and row.get("universe_hash") == UNIVERSE_HASH]
++        if eligible:
++            queue_orders(account, max(eligible, key=lambda r: timestamp(r["created_at"])), prices)
++        snapshot = read_json(PRIVATE / "단기시세.json", {})
++        quotes = quotes if quotes is not None else snapshot.get("quotes", {})
++        fill_orders(account, quotes, fx, max_age=config["autotrading"]["quote_max_age_seconds"])
++        marks = {s: rows[-1] for s, rows in series.items() if rows}
++        for symbol, quote in quotes.items():
++            try:
++                daily_date = marks.get(symbol, {}).get("date", "0000")
++                if timestamp(quote["bar_end"]) <= timestamp(now_iso()) and timestamp(quote["fetched_at"]) <= timestamp(now_iso()) and quote["price"] > 0 and quote["bar_end"][:10] >= daily_date:
++                    marks[symbol] = {"raw_close": quote["price"], "date": quote["bar_end"][:10],
++                                     "price_as_of": quote["bar_end"], "price_source": quote["source"]}
++            except (KeyError, ValueError, TypeError):
++                continue
++        mark_account(account, marks, fx)
++        for position in account["positions"]:
++            cost = position.get("cost_basis_krw")
++            position["unrealized_pnl_krw"] = position["value_krw"] - cost if cost is not None else None
++            position["unrealized_pnl_pct"] = position["value_krw"] / cost - 1 if cost and cost > 0 else None
++            mark = marks.get(position["symbol"], {})
++            position["price_as_of"] = mark.get("price_as_of", mark.get("date"))
++            position["price_source"] = mark.get("price_source", "Yahoo Finance 완결 일봉 종가")
++        pending = [row for row in account["orders"] if row["status"] == "pending"]
++        account["status"] = "waiting_quote" if pending else "running" if account["trades"] else "ready"
++        account["message"] = pending[0].get("waiting_reason", "새 관측 대기") if pending else "현재 배분 유지 · 다음 모델 전망을 기다립니다"
++        account["as_of"] = now_iso()
++        account["quote_status"] = snapshot.get("status", "pending")
++        account["fee_policy"] = deepcopy(POLICY)
++        if config.get("fee_confirmation", {}).get("commission_rate") == 0.001:
++            account["fee_policy"]["account_confirmation"] = "사용자가 기본0.1% 적용 확인 · 실제 계좌 API 미연결"
++            account["fee_policy"]["limitations"] = [v for v in POLICY["limitations"] if "이벤트" not in v]
++        account["assumptions"] = ["무료 지연 1분봉, 주문 이후 시작된 완결 정규장 관측만 체결; 최대 지연20분",
++            "시장 USD/KRW는 실제 토스 은행 환율 아님; 공시 기본0.1%·소액면제·SEC·환전 원장 유지",
++            "지정15개 비레버리지 ETF 후보이며 전체 ETF·토스 실제 지원 종목 검증 아님",
++            "소수점6자리·전액 현금 증거금 가정, 세금·실제 호가차이·부분체결·현금결제기간 미반영",
++            "배당은 지급일 대신 완결 일봉 관측일 현금 반영; 원가 미상은 추정하지 않음"]
++        save_json(ACCOUNT, account)
++        update_state(paper=account_view(account), holdings=[], portfolio={"total_value": account["current_balance_krw"],
++            "currency": "KRW", "as_of": account["as_of"], "pnl": account["pnl_krw"]})
++        return account
+diff --git a/6차/src/core.py b/6차/src/core.py
+new file mode 100644
+index 0000000..f12789a
+--- /dev/null
++++ b/6차/src/core.py
+@@ -0,0 +1,163 @@
++"""외부 패키지 없이 검증 가능한 시세·분할·모의체결 계산입니다."""
++
++from datetime import date, datetime, time, timezone
++import json
++import math
++import os
++from pathlib import Path
++import tempfile
++import time as clock
++
++
++def now_iso():
++    return datetime.now(timezone.utc).isoformat(timespec="seconds")
++
++
++def read_json(path, default=None):
++    path = Path(path)
++    if not path.exists():
++        return default
++    with path.open(encoding="utf-8-sig") as stream:
++        return json.load(stream)
++
++
++def save_json(path, value):
++    path = Path(path)
++    path.parent.mkdir(parents=True, exist_ok=True)
++    descriptor, temporary = tempfile.mkstemp(prefix=".저장-", suffix=".tmp", dir=path.parent)
++    try:
++        with os.fdopen(descriptor, "w", encoding="utf-8", newline="\n") as stream:
++            json.dump(value, stream, ensure_ascii=False, indent=2, allow_nan=False)
++            stream.write("\n")
++            stream.flush()
++            os.fsync(stream.fileno())
++        # Windows의 읽기 핸들이 잠깐 교체를 막을 수 있어 같은 원자 교체만 한정 재시도합니다.
++        # WinError 5/32 이외에는 즉시 실패하며, 영구 거부도 9회/대기 합계 0.91초 뒤 원문을 올립니다.
++        delays = (0.01, 0.02, 0.04, 0.08, 0.16, 0.2, 0.2, 0.2)
++        for attempt in range(len(delays) + 1):
++            try:
++                os.replace(temporary, path)
++                break
++            except OSError as error:
++                if getattr(error, "winerror", None) not in (5, 32) or attempt == len(delays):
++                    raise
++                clock.sleep(delays[attempt])
++    finally:
++        if os.path.exists(temporary):
++            os.unlink(temporary)
++
++
++def session_completed(day, current=None):
++    # 미 동부 표준시 기준 장 종료 후 15분까지 기다려 서머타임에도 보수적으로 처리합니다.
++    current = datetime.fromisoformat(current) if isinstance(current, str) else current
++    current = current or datetime.now(timezone.utc)
++    close = datetime.combine(date.fromisoformat(day), time(21, 15), tzinfo=timezone.utc)
++    return current >= close
++
++
++def validate_rows(rows):
++    by_date = {}
++    for original in rows:
++        row = dict(original)
++        date.fromisoformat(row["date"])
++        for field in ("open", "close"):
++            value = float(row[field])
++            if not math.isfinite(value) or value <= 0:
++                raise ValueError(f"{row['date']} {field} 가격이 유효하지 않습니다")
++            row[field] = value
++        if row["date"] in by_date and by_date[row["date"]] != row:
++            raise ValueError(f"{row['date']} 중복 날짜의 값이 다릅니다")
++        by_date[row["date"]] = row
++    return [by_date[key] for key in sorted(by_date)]
++
++
++def make_split(dates):
++    dates = sorted(set(dates))
++    if len(dates) < 20:
++        raise ValueError("시간순 분할에는 최소 20개 관측값이 필요합니다")
++    first = int(len(dates) * 0.6)
++    second = int(len(dates) * 0.8)
++    return {"train_start": dates[0], "train_end": dates[first - 1],
++            "validation_start": dates[first], "validation_end": dates[second - 1],
++            "test_start": dates[second], "test_end": dates[-1], "rows": len(dates),
++            "method": "고정 시간순 60/20/20; 동일 구간 반복은 새 독립 검증 아님"}
++
++
++def common_dates(series):
++    if not series:
++        return []
++    return sorted(set.intersection(*(set(row["date"] for row in rows) for rows in series.values())))
++
++
++def forecast_metrics(actual, predicted, previous):
++    if not actual or len(actual) != len(predicted) or len(actual) != len(previous):
++        raise ValueError("예측과 실제값 길이가 일치해야 합니다")
++    if any(not math.isfinite(float(value)) for values in (actual, predicted, previous) for value in values):
++        raise ValueError("유한하지 않은 예측값입니다")
++    if any(value <= 0 for value in actual):
++        raise ValueError("양의 실제 가격이 필요합니다")
++    count = len(actual)
++    return {"mae": sum(abs(a - p) for a, p in zip(actual, predicted)) / count,
++            "mape": sum(abs(a - p) / a for a, p in zip(actual, predicted)) / count,
++            "direction_accuracy": sum((a > old) == (p > old) for a, p, old in zip(actual, predicted, previous)) / count,
++            "n": count}
++
++
++def backtest(series, fee_bps=10, rebalance=False, weights=None):
++    """전일 종가로 결정하고 다음 관측일 조정 시가에만 모의 체결합니다."""
++    if not 0 <= fee_bps <= 1000:
++        raise ValueError("비용 범위를 확인해 주세요")
++    series = {symbol: validate_rows(rows) for symbol, rows in series.items()}
++    symbols = sorted(series)
++    days = common_dates(series)
++    if len(days) < 2:
++        raise ValueError("공통 거래일이 부족합니다")
++    weights = weights or {symbol: 1 / len(symbols) for symbol in symbols}
++    if set(weights) != set(symbols) or any(not math.isfinite(value) or value < 0 for value in weights.values()):
++        raise ValueError("배분이 유효하지 않습니다")
++    if abs(sum(weights.values()) - 1) > 1e-8:
++        raise ValueError("배분 합계는 1이어야 합니다")
++    lookup = {symbol: {row["date"]: row for row in rows} for symbol, rows in series.items()}
++    units = {symbol: 0.0 for symbol in symbols}
++    cash = 100.0
++    costs = turnover = 0.0
++    history = [{"date": days[0], "value": 100.0}]
++    trades = []
++    rate = fee_bps / 10000
++    for index, day in enumerate(days[1:], 1):
++        previous = days[index - 1]
++        # 월말 신호는 다음 거래일 시가에 체결되며 당일 종가를 참조하지 않습니다.
++        should_trade = index == 1 or (rebalance and previous[:7] != day[:7])
++        if should_trade:
++            old_values = {symbol: units[symbol] * lookup[symbol][day]["open"] for symbol in symbols}
++            wealth = cash + sum(old_values.values())
++            low, high = 0.0, wealth
++            # 비용을 제외한 자산과 거래대금의 방정식을 풀어 음수 현금을 방지합니다.
++            for _ in range(70):
++                after_fee = (low + high) / 2
++                charge = rate * sum(abs(after_fee * weights[symbol] - old_values[symbol]) for symbol in symbols)
++                if after_fee + charge > wealth:
++                    high = after_fee
++                else:
++                    low = after_fee
++            after_fee = (low + high) / 2
++            notional = sum(abs(after_fee * weights[symbol] - old_values[symbol]) for symbol in symbols)
++            charge = wealth - after_fee
++            costs += charge
++            turnover += notional / 100
++            units = {symbol: after_fee * weights[symbol] / lookup[symbol][day]["open"] for symbol in symbols}
++            cash = 0.0
++            trades.append({"signal_date": previous, "execution_date": day, "cost": charge, "notional": notional})
++        value = cash + sum(units[symbol] * lookup[symbol][day]["close"] for symbol in symbols)
++        history.append({"date": day, "value": value})
++    peak = 100.0
++    drawdown = 0.0
++    for row in history:
++        peak = max(peak, row["value"])
++        drawdown = min(drawdown, row["value"] / peak - 1)
++    years = (date.fromisoformat(days[-1]) - date.fromisoformat(days[0])).days / 365.25
++    end = history[-1]["value"]
++    return {"history": history, "trades": trades, "total_return": end / 100 - 1,
++            "cagr": (end / 100) ** (1 / years) - 1 if years > 0 else 0,
++            "max_drawdown": drawdown, "turnover": turnover, "costs": costs,
++            "start": days[0], "end": days[-1], "years": years, "fee_bps": fee_bps}
+diff --git a/6차/src/fees.py b/6차/src/fees.py
+new file mode 100644
+index 0000000..dcacb01
+--- /dev/null
++++ b/6차/src/fees.py
+@@ -0,0 +1,76 @@
++"""2026-11-10 확인한 토스증권 일반 공시 요율의 모의 계산입니다.
++
++실제 계좌 우대·체결 호가·은행 매매기준율을 인증해 확인한 것은 아닙니다.
++"""
++
++from datetime import datetime, timezone
++from decimal import Decimal, ROUND_DOWN, ROUND_HALF_UP
++import math
++from zoneinfo import ZoneInfo
++
++
++POLICY = {"checked_at": "2026-11-10", "broker": "토스증권 일반 공시 기준",
++          "commission_rate": 0.001, "commission_exempt_notional_usd": 10,
++          "sec_sell_rate": 0.0000206, "sec_minimum_usd": 0.01,
++          "fx_regular_spread_bps": 5, "fx_other_spread_bps": 50,
++          "taf_usd": 0, "taf_note": "2026년 4분기 TAF 휴지 및 토스 고객 전가 근거 없음. 임의 부과하지 않음",
++          "policy_review_after": "2026-12-31",
++          "sources": ["https://home.tossinvest.com/ko/open-api",
++                      "https://corp.tossinvest.com/ko/business?tab=commission",
++                      "https://corp.tossinvest.com/ko/faq?page=1&searchTitleKeyword=%EC%88%98%EC%88%98%EB%A3%8C&tab=101",
++                      "https://www.sec.gov/files/rules/sro/finra/2026/34-106409.pdf"],
++          "limitations": ["계좌별 수수료 이벤트·우대 미확인", "무료 시장 환율은 토스 실제 은행 호가가 아님",
++                          "한국 외환영업일 미확인 시 낮 시간도 50bp 보수 가정", "세금은 포함하지 않음",
++                          "2027년 요율·TAF 고객 적용은 재확인 필요"]}
++
++
++def fx_spread_bps(timestamp=None, business_day=None):
++    moment = datetime.fromisoformat(timestamp) if isinstance(timestamp, str) else timestamp
++    moment = (moment or datetime.now(timezone.utc)).astimezone(ZoneInfo("Asia/Seoul"))
++    minutes = moment.hour * 60 + moment.minute
++    if business_day is True and moment.weekday() < 5 and 9 * 60 <= minutes < 15 * 60 + 30:
++        return 5
++    return 50
++
++
++def convert_won(won, market_rate, spread_bps):
++    if any(not math.isfinite(float(value)) for value in (won, market_rate, spread_bps)) or won < 0 or market_rate <= 0 or not 0 <= spread_bps <= 1000:
++        raise ValueError("환전 금액·시장 환율·스프레드가 유효하지 않습니다")
++    offered = market_rate * (1 + spread_bps / 10000)
++    dollars = won / offered
++    return {"initial_krw": won, "rate": market_rate, "applied_rate": offered, "spread_bps": spread_bps,
++            "received_usd": dollars, "cost_krw": won - dollars * market_rate,
++            "basis": "토스 공시 스프레드 + 무료 시장 환율을 적용한 가정 · 토스 실제 은행 호가 아님"}
++
++
++def trade_fees(notional, side):
++    if not math.isfinite(float(notional)) or notional < 0 or side not in ("buy", "sell"):
++        raise ValueError("매매 금액과 방향이 유효하지 않습니다")
++    amount = Decimal(str(notional))
++    # 공시의 매매 수수료는 센트 미만 절사, SEC는 센트 단위 반올림입니다.
++    commission = Decimal(0) if amount <= Decimal("10") else amount * Decimal("0.001")
++    commission = commission.quantize(Decimal("0.01"), rounding=ROUND_DOWN)
++    sec = max(Decimal("0.01"), amount * Decimal("0.0000206")) if side == "sell" and amount > 0 else Decimal(0)
++    sec = sec.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
++    return {"commission_usd": float(commission), "sec_usd": float(sec), "taf_usd": 0.0,
++            "total_usd": float(commission + sec)}
++
++
++def floor_quantity(quantity):
++    return float(Decimal(str(max(0.0, quantity))).quantize(Decimal("0.000001"), rounding=ROUND_DOWN))
++
++
++def affordable_quantity(cash_usd, price_usd, max_quantity):
++    if not all(math.isfinite(float(value)) and value >= 0 for value in (cash_usd, price_usd, max_quantity)) or price_usd == 0:
++        raise ValueError("주문 가능 현금·가격·수량이 유효하지 않습니다")
++    low = 0
++    high = int(Decimal(str(max_quantity)) * 1000000)
++    while low < high:
++        middle = (low + high + 1) // 2
++        quantity = middle / 1000000
++        amount = quantity * price_usd
++        if amount + trade_fees(amount, "buy")["total_usd"] <= cash_usd:
++            low = middle
++        else:
++            high = middle - 1
++    return low / 1000000
+diff --git a/6차/src/intraday.py b/6차/src/intraday.py
+new file mode 100644
+index 0000000..086f722
+--- /dev/null
++++ b/6차/src/intraday.py
+@@ -0,0 +1,137 @@
++"""무료 정규장 완결 1분 관측을 학습과 별개로 수집합니다."""
++
++from concurrent.futures import ThreadPoolExecutor, as_completed
++from contextlib import contextmanager
++from datetime import datetime, timedelta, timezone
++import json
++import math
++import threading
++import traceback
++from urllib.parse import quote, urlencode
++from urllib.request import Request, urlopen
++
++from .autotrading import timestamp
++from .core import now_iso, read_json, save_json
++from .runtime import PRIVATE, STOP, load_config, log, record_failure
++
++
++QUOTES = PRIVATE / "단기시세.json"
++
++
++def fetch_intraday(symbol):
++    query = urlencode({"range": "1d", "interval": "1m", "includePrePost": "false"})
++    url = f"https://query1.finance.yahoo.com/v8/finance/chart/{quote(symbol, safe='')}?{query}"
++    with urlopen(Request(url, headers={"User-Agent": "Mozilla/5.0"}), timeout=12) as response:
++        payload = json.load(response)
++    result = payload.get("chart", {}).get("result")
++    if payload.get("chart", {}).get("error") or not result:
++        raise RuntimeError(f"{symbol}: 무료 1분봉을 확보하지 못했습니다: {payload.get('chart', {}).get('error')}")
++    return result[0], url
++
++
++def parse_quote(symbol, chart, fetched_at, source_url):
++    meta = chart.get("meta", {})
++    if meta.get("symbol") != symbol or meta.get("currency") != "USD" or meta.get("instrumentType") != "ETF" or meta.get("dataGranularity") != "1m":
++        raise ValueError("요청 ETF·달러 통화·1분 간격 메타데이터가 일치하지 않습니다")
++    periods = meta.get("tradingPeriods", [])
++    if isinstance(periods, dict):
++        periods = periods.get("regular", [])
++    def flatten(value):
++        if isinstance(value, dict) and "start" in value and "end" in value:
++            return [value]
++        return [p for part in value for p in flatten(part)] if isinstance(value, list) else []
++    regular = flatten(periods)
++    if not regular:
++        fallback = meta.get("currentTradingPeriod", {}).get("regular")
++        regular = [fallback] if fallback and "start" in fallback and "end" in fallback else []
++    if not regular:
++        raise ValueError("공급자의 정규장 거래시간을 확인할 수 없습니다")
++    fetched = timestamp(fetched_at)
++    indicators = chart.get("indicators", {}).get("quote", [])
++    if not indicators:
++        raise ValueError("무료 1분봉 가격이 없습니다")
++    candidates = []
++    for index, stamp in enumerate(chart.get("timestamp", [])):
++        values = indicators[0]
++        price = values.get("close", [])[index]
++        volume = values.get("volume", [])[index]
++        if price is None or volume is None or volume <= 0 or not math.isfinite(float(price)) or price <= 0:
++            continue
++        start = datetime.fromtimestamp(stamp, timezone.utc)
++        end = start + timedelta(minutes=1)
++        session = next((p for p in regular if p["start"] <= stamp and stamp + 60 <= p["end"]), None)
++        if session is None or end > fetched:
++            continue
++        candidates.append({"symbol": symbol, "price": float(price), "bar_start": start.isoformat(), "bar_end": end.isoformat(),
++            "fetched_at": fetched_at, "session_open": datetime.fromtimestamp(session["start"], timezone.utc).isoformat(),
++            "session_close": datetime.fromtimestamp(session["end"], timezone.utc).isoformat(), "regular_session": True,
++            "interval_seconds": 60, "source": "Yahoo Finance chart 무료 1분봉", "url": source_url,
++            "provider_delay_seconds": meta.get("exchangeDataDelayedBy"),
++            "observed_age_seconds": (fetched - end).total_seconds(), "volume": volume,
++            "note": "무료 지연 정보; 실제 토스 체결 호가나 모든 거래소 최우선 호가가 아닙니다"})
++    if not candidates:
++        raise ValueError("공급자 정규장 범위에 완결된 거래 관측이 없습니다")
++    return max(candidates, key=lambda row: timestamp(row["bar_end"]))
++
++
++def collect_quotes(symbols, fetched_at=None, fetcher=None):
++    fetcher = fetcher or fetch_intraday
++    quotes, errors, details = {}, {}, {}
++    with ThreadPoolExecutor(max_workers=3) as executor:
++        futures = {executor.submit(fetcher, symbol): symbol for symbol in symbols}
++        for future in as_completed(futures):
++            symbol = futures[future]
++            try:
++                chart, url = future.result()
++                observed = fetched_at or now_iso()
++                quotes[symbol] = parse_quote(symbol, chart, observed, url)
++            except Exception as error:
++                errors[symbol] = str(error)
++                details[symbol] = traceback.format_exc()
++    return {"quotes": quotes, "errors": errors, "error_details": details, "fetched_at": fetched_at or now_iso(),
++            "status": "ready" if not errors else "partial" if quotes else "unavailable"}
++
++
++def monitor_loop(finished):
++    errors = 0
++    while not finished.is_set() and not STOP.exists():
++        try:
++            config = load_config()
++            def stoppable_fetch(symbol):
++                if finished.is_set() or STOP.exists():
++                    raise InterruptedError("시세 수집 중 중지 요청")
++                return fetch_intraday(symbol)
++            snapshot = collect_quotes(config["symbols"], fetcher=stoppable_fetch)
++            if finished.is_set() or STOP.exists():
++                return
++            # 실패 ETF는 개별 대기하며 이전 캐시를 새 시세로 재표시하지 않습니다.
++            for symbol, message in snapshot["errors"].items():
++                record_failure(RuntimeError(f"무료 단기시세 {symbol}: {message}\n{snapshot['error_details'][symbol]}"))
++            save_json(QUOTES, snapshot)
++            from .market import load_market
++            from .paper import reconcile_paper
++            reconcile_paper(load_market()["series"])
++            errors = errors + 1 if not snapshot["quotes"] else 0
++            delay = min(900, config["autotrading"]["quote_poll_seconds"] * 2 ** min(errors, 4))
++        except Exception as error:
++            record_failure(error)
++            log(f"단기 시세·모의주문 갱신 실패: {error}", "error")
++            errors += 1
++            delay = min(900, 60 * 2 ** min(errors, 4))
++        # 이 대기는 시세 호출 간격이며 모델 학습은 별도 주 스레드에서 계속 실행됩니다.
++        if finished.wait(delay):
++            return
++
++
++@contextmanager
++def market_monitor(enabled):
++    finished = threading.Event()
++    thread = threading.Thread(target=monitor_loop, args=(finished,), daemon=True) if enabled else None
++    if thread:
++        thread.start()
++    try:
++        yield
++    finally:
++        finished.set()
++        if thread:
++            thread.join(20)
+diff --git a/6차/src/market.py b/6차/src/market.py
+new file mode 100644
+index 0000000..7a39315
+--- /dev/null
++++ b/6차/src/market.py
+@@ -0,0 +1,182 @@
++"""무료 일봉의 출처·완결 여부와 조정 기준을 보존합니다."""
++
++from datetime import datetime, timedelta, timezone
++import hashlib
++import json
++from urllib.parse import quote, urlencode
++from urllib.request import Request, urlopen
++
++from .core import backtest, common_dates, now_iso, read_json, save_json, session_completed, validate_rows
++from .runtime import PRIVATE, load_config, log, record_failure, update_state
++
++
++MARKET = PRIVATE / "시세.json"
++
++
++def load_market():
++    return read_json(MARKET, {"series": {}, "metadata": {}})
++
++
++def fetch_chart(symbol):
++    parameters = urlencode({"period1": 0, "period2": int(datetime.now(timezone.utc).timestamp()),
++                            "interval": "1d", "events": "div,splits"})
++    url = f"https://query1.finance.yahoo.com/v8/finance/chart/{quote(symbol, safe='')}?{parameters}"
++    with urlopen(Request(url, headers={"User-Agent": "Mozilla/5.0"}), timeout=30) as response:
++        payload = json.loads(response.read())
++    if payload.get("chart", {}).get("error"):
++        raise RuntimeError(f"{symbol}: {payload['chart']['error']}")
++    result = payload.get("chart", {}).get("result")
++    if not result:
++        raise RuntimeError(f"{symbol}: 무료 시세 응답이 비어 있습니다")
++    return result[0], url
++
++
++def refresh_market():
++    config = load_config()
++    old = load_market()
++    series = {}
++    metadata = {}
++    raw_charts = {}
++    update_state(data={"status": "running"}, job={"message": "무료 과거 일봉을 확인하고 있습니다"})
++    end = (datetime.now(timezone.utc).date() + timedelta(days=1)).isoformat()
++    for symbol in config["symbols"]:
++        chart, source_url = fetch_chart(symbol)
++        raw_charts[symbol] = {"chart": chart, "url": source_url, "fetched_at": now_iso()}
++        quotes = chart["indicators"]["quote"][0]
++        adjusted_prices = chart["indicators"]["adjclose"][0]["adjclose"]
++        events = chart.get("events", {})
++        dividends = {datetime.fromtimestamp(int(stamp), timezone.utc).date().isoformat(): value["amount"]
++                     for stamp, value in events.get("dividends", {}).items()}
++        splits = {datetime.fromtimestamp(int(stamp), timezone.utc).date().isoformat(): value["numerator"] / value["denominator"]
++                  for stamp, value in events.get("splits", {}).items()}
++        rows = []
++        for index, timestamp in enumerate(chart["timestamp"]):
++            day = datetime.fromtimestamp(timestamp, timezone.utc).date().isoformat()
++            if not session_completed(day):
++                continue
++            if any(value is None for value in (quotes["close"][index], quotes["open"][index], adjusted_prices[index])):
++                continue
++            raw_close = float(quotes["close"][index])
++            adjusted = float(adjusted_prices[index])
++            factor = adjusted / raw_close
++            rows.append({"date": day, "open": float(quotes["open"][index]) * factor,
++                         "close": adjusted, "raw_close": raw_close, "raw_open": float(quotes["open"][index]),
++                         "dividend": float(dividends.get(day, 0)), "split": float(splits.get(day, 0))})
++        rows = validate_rows(rows)
++        if len(rows) < 100:
++            raise RuntimeError(f"{symbol}: 완결 일봉 {len(rows)}개로 학습 자료가 부족합니다")
++        series[symbol] = rows
++        encoded = json.dumps(rows, sort_keys=True, separators=(",", ":")).encode("utf-8")
++        metadata[symbol] = {"symbol": symbol, "rows": len(rows), "start": rows[0]["date"],
++                            "end": rows[-1]["date"], "sha256": hashlib.sha256(encoded).hexdigest(),
++                            "source": "Yahoo Finance chart 일봉 · 표준 HTTPS 직접 수집", "url": source_url, "fetched_at": now_iso(),
++                            "adjustment": "Adj Close / Close 비율을 Open에 적용; 배당·분할 조정",
++                            "alias_note": "과거 SPLG 티커; 과거 지수 변경 이력" if symbol == "SPYM" else None}
++    # 전 종목 성공 후 하나의 스냅샷으로 저장해 일부 종목만 바뀌는 상태를 막습니다.
++    from .training_data import save_snapshot
++    raw_snapshot = save_snapshot(PRIVATE, "ETF수집원본", raw_charts)
++    payload = {"series": series, "metadata": metadata, "fetched_at": now_iso(),
++               "raw_snapshot": raw_snapshot, "requested_period1": 0}
++    save_json(MARKET, payload)
++    old_dates = {symbol: {row["date"] for row in rows} for symbol, rows in old["series"].items()}
++    new_rows = sum(len({row["date"] for row in rows} - old_dates.get(symbol, set())) for symbol, rows in series.items())
++    dates = common_dates(series)
++    update_state(data={"status": "ready", "as_of": min(rows[-1]["date"] for rows in series.values()),
++                       "start": dates[0], "end": dates[-1], "rows": sum(len(rows) for rows in series.values()),
++                       "common_rows": len(dates), "new_rows": new_rows, "symbols": list(metadata.values()),
++                       "fetched_at": payload["fetched_at"], "source": "Yahoo Finance chart / 무료 일봉"},
++                 training={"new_rows": new_rows})
++    try:
++        refresh_fx()
++    except Exception as error:
++        record_failure(error)
++        log(f"무료 환율 수집 실패 · 환산 상태를 확인해 주세요: {error}", "error")
++        update_state(fx_status="error")
++    rebuild_simulation(payload)
++    log(f"완결 일봉 확보: 공통 {len(dates)}일, 신규 종목별 합계 {new_rows}행")
++    return payload
++
++
++def refresh_fx():
++    from .paper import FX
++    chart, source_url = fetch_chart("KRW=X")
++    quotes = chart["indicators"]["quote"][0]
++    rates = [{"date": datetime.fromtimestamp(stamp, timezone.utc).date().isoformat(), "rate": float(quotes["close"][index])}
++             for index, stamp in enumerate(chart["timestamp"])
++             if quotes["close"][index] is not None and session_completed(datetime.fromtimestamp(stamp, timezone.utc).date().isoformat())]
++    rates = [row for row in rates if row["rate"] > 0]
++    if not rates:
++        raise RuntimeError("USD/KRW 실제 무료 환율 자료가 비어 있습니다")
++    value = {"rate": rates[-1]["rate"], "as_of": rates[-1]["date"], "fetched_at": now_iso(),
++             "source": "Yahoo Finance KRW=X 일봉 · KRW per USD", "url": source_url, "rates": rates,
++             "note": "토스증권 실제 적용 환율 아님; 시장 일봉과 설정 스프레드 가정"}
++    from .training_data import save_snapshot
++    value["raw_snapshot"] = save_snapshot(PRIVATE, "환율수집원본", {"chart": chart, "url": source_url,
++                                                                   "fetched_at": value["fetched_at"]})
++    save_json(FX, value)
++    update_state(fx_status="ready")
++    return value
++
++
++def rebuild_simulation(market=None):
++    market = market or load_market()
++    # 과거 단순 정책 비교는 최초 세 종목 범위를 유지하며 확장 후보의 모델 성과와 혼합하지 않습니다.
++    series = {symbol: market["series"][symbol] for symbol in ("QQQM", "SCHG", "SPYM") if symbol in market["series"]}
++    if not series:
++        return
++    from .paper import FX
++    fx = read_json(FX)
++    if not fx:
++        update_state(history=[], simulation={"strategies": [], "assumptions": ["환율 확보 전 원화 비교를 대기합니다"]})
++        return
++    days = common_dates(series)
++    trimmed = {symbol: [row for row in rows if row["date"] in set(days)] for symbol, rows in series.items()}
++    hold = historical_policy(trimmed, fx)
++    monthly = historical_policy(trimmed, fx, monthly=True)
++    benchmark = historical_policy({"SPYM": trimmed["SPYM"]}, fx)
++    history = [{"date": row["date"], "portfolio": row["value_krw"] / 10000,
++                "rebalance": monthly["history"][index]["value_krw"] / 10000,
++                "benchmark": benchmark["history"][index]["value_krw"] / 10000}
++               for index, row in enumerate(hold["history"])]
++    strategies = []
++    for name, key, result in (("동일가중 단순 보유", "portfolio", hold), ("월간 리밸런싱", "rebalance", monthly), ("SPYM 단순 보유", "benchmark", benchmark)):
++        values = [row[key] for row in history]
++        peak, drawdown = 100.0, 0.0
++        for value in values:
++            peak = max(peak, value)
++            drawdown = min(drawdown, value / peak - 1)
++        years = (datetime.fromisoformat(days[-1]) - datetime.fromisoformat(days[0])).days / 365.25
++        strategies.append({"name": name, "start": days[0], "end": days[-1], "years": years,
++            "total_return": values[-1] / 100 - 1, "cagr": (values[-1] / 100) ** (1 / years) - 1,
++            "max_drawdown": drawdown, "costs": result["fees_krw"] + result["exchange_cost_krw"],
++            "turnover": sum(trade["amount_usd"] for trade in result["trades"]) / result["initial_value_usd"],
++            "currency": "KRW"})
++    update_state(history=history, simulation={"strategies": strategies,
++        "assumptions": ["가상 초기자본 100만원, 원화 평가 · 일별 실제 USD/KRW 환율 반영 · 원금 100 기준 지수",
++                        "2026-11-10 확인한 토스 일반 공시 매매·SEC 요율을 과거 전체에 가정 적용한 비교",
++                        "야간 환전 스프레드50bp · 10달러 이하 매매수수료 면제 · 센트 절사/SEC 반올림 반영",
++                        "다음 거래일 배당·분할 조정 시가 체결, 조정 단위 6자리 수량 가정 · 실제 과거 수수료 재현 아님",
++                        "배당 재투자 조정 가격의 비교 · 세금·호가차이 미포함",
++                        "추가 납입 0, 공통 기간에서 같은 시작일·종료일 사용",
++                        "역사적 단순 정책 비교이며 AI 예측 기반 거래 수익이 아님"]})
++
++
++def historical_policy(series, fx, monthly=False):
++    from .paper import advance_account, create_account, fx_for_day, session_open
++    days = common_dates(series)
++    initial_fx = fx_for_day(fx, days[0])
++    if not initial_fx:
++        raise RuntimeError("과거 비교 시작일의 원/달러 환율이 없습니다")
++    account = create_account(initial_fx, days[0], spread_bps=50)
++    account["history"] = [{"date": days[0], "value_krw": account["current_balance_krw"], "fx_rate": initial_fx["rate"]}]
++    adjusted = {symbol: [{**row, "raw_open": row["open"], "raw_close": row["close"], "dividend": 0, "split": 0}
++                          for row in rows] for symbol, rows in series.items()}
++    weights = {symbol: 1 / len(series) for symbol in series}
++    signals = []
++    for index, day in enumerate(days[:-1]):
++        if index == 0 or (monthly and day[:7] != days[index + 1][:7]):
++            # 정책이 정해진 과거 반사실 비교이며 실제 전진 신호 원장과 분리합니다.
++            generated = session_open(day) + timedelta(hours=7)
++            signals.append({"id": day, "as_of": day, "created_at": generated.isoformat(), "weights": weights})
++    advance_account(account, adjusted, fx, signals)
++    return account
+diff --git a/6차/src/modeling.py b/6차/src/modeling.py
+new file mode 100644
+index 0000000..06bc999
+--- /dev/null
++++ b/6차/src/modeling.py
+@@ -0,0 +1,609 @@
++"""사전학습 모델의 실제 추가 학습과 고정 시간순 비교입니다."""
++
++from datetime import datetime, timezone
++import gc
++import hashlib
++import json
++import os
++from pathlib import Path
++import shutil
++import time
++import uuid
++
++from .core import common_dates, forecast_metrics, make_split, now_iso, read_json, save_json
++from .market import load_market
++from .runtime import PRIVATE, STOP, load_config, load_state, log, record_failure, update_state
++from .universe import UNIVERSE_HASH
++from .training_data import prepare_training_corpus
++from .overfit_guard import MONITOR_SCOPE, finish_attempt, reserve_training, validation_decision
++
++
++MODEL_ID = "amazon/chronos-2"
++SPLIT = PRIVATE / "고정분할.json"
++TRAINING = PRIVATE / "학습기록.json"
++LATEST = PRIVATE / "체크포인트" / "latest.json"
++
++
++def build_training_extension(market_series, frozen, train_end):
++    # 새 ETF도 최초 공통 검증·시험 날짜보다 앞선 구간만 동결해 교차 자산 시간 누출을 막습니다.
++    return {symbol: [dict(row) for row in rows if row["date"] <= train_end]
++            for symbol, rows in market_series.items() if symbol not in frozen
++            and len([row for row in rows if row["date"] <= train_end]) >= 2}
++
++
++def prepare_environment():
++    cache = PRIVATE / "캐시"
++    cache.mkdir(parents=True, exist_ok=True)
++    os.environ["HF_HOME"] = str(cache / "huggingface")
++    os.environ["HF_HUB_CACHE"] = str(cache / "huggingface" / "hub")
++    os.environ["TORCH_HOME"] = str(cache / "torch")
++    os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
++    os.environ["TOKENIZERS_PARALLELISM"] = "false"
++
++
++def evaluation_windows(series, split, segment, context_length, limit=48):
++    start = split[f"{segment}_start"]
++    end = split[f"{segment}_end"]
++    inputs, actual, previous, keys = [], [], [], []
++    for symbol, rows in sorted(series.items()):
++        available = [index for index, row in enumerate(rows) if start <= row["date"] <= end and index >= 32]
++        # 일정 간격 표본이며 미래 가격이나 성과를 기준으로 표본을 고르지 않습니다.
++        if len(available) > limit:
++            available = sorted({available[int(index * (len(available) - 1) / (limit - 1))] for index in range(limit)})
++        for index in available:
++            inputs.append([row["close"] for row in rows[max(0, index - context_length):index]])
++            actual.append(rows[index]["close"])
++            previous.append(rows[index - 1]["close"])
++            keys.append({"symbol": symbol, "date": rows[index]["date"], "context_end": rows[index - 1]["date"]})
++    if not inputs:
++        raise RuntimeError("시간순 평가 표본이 부족합니다")
++    return inputs, actual, previous, keys
++
++
++def predict_values(pipeline, inputs, context_length, batch_size=4):
++    import numpy as np
++    predictions = pipeline.predict([np.asarray(values, dtype=np.float32) for values in inputs],
++                                   prediction_length=1, context_length=context_length, batch_size=batch_size)
++    median = min(range(len(pipeline.quantiles)), key=lambda index: abs(pipeline.quantiles[index] - 0.5))
++    return [float(prediction[0, median, 0].detach().cpu()) for prediction in predictions]
++
++
++def evaluate(pipeline, series, split, segment, context_length, label):
++    inputs, actual, previous, keys = evaluation_windows(series, split, segment, context_length)
++    predictions = predict_values(pipeline, inputs, context_length)
++    metrics = {"model": label, "split": segment, **forecast_metrics(actual, predictions, previous)}
++    return metrics, [{**key, "actual": truth, "previous": old, "prediction": value}
++                     for key, truth, old, value in zip(keys, actual, previous, predictions)]
++
++
++def validation_basis(details, expected_count):
++    basis = [{key: row[key] for key in ("symbol", "date", "context_end", "actual", "previous")} for row in details]
++    if len(basis) != expected_count or len({(row["symbol"], row["date"], row["context_end"]) for row in basis}) != expected_count:
++        raise ValueError("고정 검증의 표본 수·식별자가 일치하지 않습니다")
++    return basis
++
++
++def refresh_live_forecasts():
++    """채택된 저장본의 최신 예측을 학습 예약·검증 채택과 독립적으로 발행합니다."""
++    if STOP.exists():
++        raise InterruptedError("운영 예측 전 중지 요청을 확인했습니다")
++    latest = read_json(LATEST)
++    if latest is None:
++        return {"status": "waiting_checkpoint"}
++    config = load_config()
++    context_length = int(config.get("context_length", 256))
++    if not 32 <= context_length <= 512:
++        raise ValueError("운영 예측 문맥 제한을 벗어났습니다")
++    series = load_market()["series"]
++    if not series or any(not rows for rows in series.values()):
++        raise ValueError("운영 예측에 필요한 완결 일봉이 없습니다")
++    signature = hashlib.sha256(json.dumps({"checkpoint": latest, "universe": UNIVERSE_HASH,
++        "context_length": context_length,
++        "series": {symbol: rows[-context_length:] for symbol, rows in sorted(series.items())}},
++        sort_keys=True, allow_nan=False).encode("utf-8")).hexdigest()
++    journal = PRIVATE / "운영예측_6차.json"
++    previous = read_json(journal, {})
++    if previous.get("signature") == signature:
++        return {"status": "unchanged", "created_at": previous["created_at"]}
++    update_state(forecast={"status": "loading", "message": "채택된 운영 모델로 최신 완결 일봉을 예측합니다"})
++    _publish_saved_forecasts(latest, series, context_length, config)
++    if STOP.exists():
++        raise InterruptedError("운영 예측 완료 기록 전 중지 요청을 확인했습니다")
++    result = {"status": "ready", "signature": signature, "created_at": now_iso(),
++              "checkpoint_saved_at": latest.get("saved_at"),
++              "dates": {symbol: rows[-1]["date"] for symbol, rows in sorted(series.items())}}
++    save_json(journal, result)
++    update_state(forecast=result)
++    return result
++
++
++def _publish_saved_forecasts(latest, series, context_length, config):
++    """해시를 확인한 운영 저장본만 읽고 학습 없이 예측합니다."""
++    source = Path(latest["checkpoint"])
++    expected_files = latest.get("sha256", {})
++    if not expected_files or not any(name.endswith(".safetensors") for name in expected_files):
++        raise ValueError("운영 저장본의 가중치 해시 기록이 없습니다")
++    for name, expected in expected_files.items():
++        if Path(name).name != name:
++            raise ValueError("운영 저장본 파일 이름이 유효하지 않습니다")
++        digest = hashlib.sha256()
++        with (source / name).open("rb") as stream:
++            for block in iter(lambda: stream.read(1024 * 1024), b""):
++                digest.update(block)
++        if digest.hexdigest() != expected:
++            raise RuntimeError("운영 예측 저장본의 SHA-256이 기록과 일치하지 않습니다")
++    prepare_environment()
++    import torch
++    from chronos import Chronos2Pipeline
++    torch.set_num_threads(4)
++    device = "cuda" if torch.cuda.is_available() else "cpu"
++    if device == "cuda":
++        fraction = float(config.get("gpu_memory_fraction", 0.25))
++        if not 0.05 <= fraction <= 0.3:
++            raise ValueError("GPU 메모리 제한은 5~30% 이내여야 합니다")
++        torch.cuda.set_per_process_memory_fraction(fraction, 0)
++    if STOP.exists():
++        raise InterruptedError("운영 모델 로드 전 중지 요청을 확인했습니다")
++    pipeline = Chronos2Pipeline.from_pretrained(str(source), device_map=device,
++                                               torch_dtype=torch.float32, local_files_only=True)
++    try:
++        pipeline.model.eval()
++        with torch.inference_mode():
++            publish_forecasts(pipeline, series, context_length, "Chronos-2 채택 저장본 · 독립 운영 예측")
++    finally:
++        del pipeline
++        gc.collect()
++        if device == "cuda":
++            torch.cuda.empty_cache()
++
++
++def train_round():
++    if STOP.exists():
++        raise InterruptedError("학습 라이브러리를 불러오기 전 중지 요청을 확인했습니다")
++    config = load_config()
++    market = load_market()
++    series = market["series"]
++    dates = common_dates(series)
++    if len(dates) < 200:
++        raise RuntimeError("모델 학습에는 최소 200개 공통 완결 일봉이 필요합니다")
++    split = read_json(SPLIT)
++    if split is None:
++        split = make_split(dates)
++        split["created_at"] = now_iso()
++        save_json(SPLIT, split)
++    # 후속 수집으로 수정된 과거 조정값이 모델 비교에 섞이지 않도록 최초 학습 데이터도 동결합니다.
++    frozen_path = PRIVATE / "고정학습자료.json"
++    frozen = read_json(frozen_path)
++    if frozen is None:
++        frozen = {symbol: [row for row in rows if split["train_start"] <= row["date"] <= split["test_end"]]
++                  for symbol, rows in series.items()}
++        save_json(frozen_path, frozen)
++    series = frozen
++    extension_path = PRIVATE / "확장학습자료_3차.json"
++    extension = read_json(extension_path)
++    if extension is None:
++        extension = {"train_end": split["train_end"], "created_at": now_iso(),
++                     "series": build_training_extension(market["series"], frozen, split["train_end"])}
++        save_json(extension_path, extension)
++    missing = build_training_extension(market["series"], {**frozen, **extension["series"]}, split["train_end"])
++    if missing:
++        extension["series"].update(missing)
++        save_json(extension_path, extension)
++    if extension["train_end"] != split["train_end"] or any(
++            row["date"] > split["train_end"] for rows in extension["series"].values() for row in rows):
++        raise RuntimeError("확장 학습자료가 최초 고정 학습 기간을 벗어났습니다")
++    from .paper import FX
++    fx_training = read_json(FX, {})
++    if not fx_training.get("rates"):
++        raise RuntimeError("환율 독립 학습 시계열을 확보하기 전 학습을 시작할 수 없습니다")
++    corpus, training_data = prepare_training_corpus(PRIVATE, market, frozen, extension["series"],
++                                                   fx_training, split, now_iso())
++    update_state(training={"training_data": training_data})
++    context_length = int(config.get("context_length", 256))
++    if not 32 <= context_length <= 512:
++        raise ValueError("학습 문맥 제한을 벗어났습니다")
++    guard_path = PRIVATE / "과적합방어_5차.json"
++    try:
++        guard = reserve_training(guard_path, corpus, int(config.get("train_steps", 20)),
++                                 int(config.get("batch_size", 2)))
++    except Exception:
++        update_state(training={"status": "guard_blocked", "guard": {"status": "blocked", "budget_steps": 0,
++                     "reason": "과적합 방어 원장 또는 예산 오류로 학습을 차단했습니다. 원문을 확인해야 합니다.",
++                     "monitor_scope": MONITOR_SCOPE}})
++        raise
++    update_state(training={"guard": guard})
++    if guard["status"] == "waiting_new_data":
++        update_state(training={"status": "waiting_new_data", "step": 0, "total_steps": 0},
++                     job={"message": guard["reason"]})
++        return guard
++    pointer_before = LATEST.read_bytes() if LATEST.exists() else None
++    try:
++        return _train_reserved(config, market, series, frozen, extension, split, corpus, training_data, guard)
++    except BaseException as error:
++        # 예약은 fit 전부터 소비됩니다. 중단·실패 뒤 같은 관측을 다시 학습하지 않습니다.
++        ledger = read_json(guard_path)
++        attempt = next(entry for entry in ledger["attempts"] if entry["attempt_id"] == guard["attempt_id"])
++        outcome = "interrupted" if isinstance(error, (InterruptedError, KeyboardInterrupt)) else "failed"
++        if attempt["status"] == "reserved":
++            finish_attempt(guard_path, guard["attempt_id"], outcome, {"error": str(error)})
++        pointer_after = LATEST.read_bytes() if LATEST.exists() else None
++        published = pointer_after != pointer_before
++        update_state(training={"guard": {**guard, "status": "post_commit_error" if published else outcome,
++                     "reason": "검증을 통과한 운영 가중치 발행 뒤 후속 처리에서 중단·오류가 발생했습니다. 발행된 가중치는 유지합니다."
++                     if published else "운영 포인터 발행 전 중단·실패로 기존 가중치를 유지합니다. 예약 날짜는 소비된 상태로 유지합니다."}})
++        raise
++
++
++def _train_reserved(config, market, series, frozen, extension, split, corpus, training_data, guard):
++    prepare_environment()
++    update_state(training={"status": "loading"}, job={"message": "학습 라이브러리와 마지막 저장 모델을 불러오고 있습니다"})
++    import numpy as np
++    import torch
++    from chronos import Chronos2Pipeline
++    from huggingface_hub import HfApi, snapshot_download
++    from transformers import TrainerCallback
++    if STOP.exists():
++        raise InterruptedError("학습 라이브러리를 불러온 뒤 중지 요청을 확인했습니다")
++    record = read_json(TRAINING, {"rounds": [], "last_round": 0})
++    number = record.get("last_round", 0) + 1
++    record["last_round"] = number
++    save_json(TRAINING, record)
++    latest = read_json(LATEST, {})
++    run_dir = PRIVATE / "학습회차" / f"{number:04d}차"
++    run_dir.mkdir(parents=True, exist_ok=False)
++    started = now_iso()
++    total_steps = guard["budget_steps"]
++    context_length = int(config.get("context_length", 256))
++    if not 1 <= total_steps <= 25 or not 32 <= context_length <= 512:
++        raise ValueError("초기 운영의 학습 단계/문맥 제한을 벗어났습니다")
++    torch.set_num_threads(4)
++    device = "cuda" if torch.cuda.is_available() else "cpu"
++    if device == "cuda":
++        fraction = float(config.get("gpu_memory_fraction", 0.25))
++        if not 0.05 <= fraction <= 0.3:
++            raise ValueError("GPU 메모리 제한은 5~30% 이내여야 합니다")
++        torch.cuda.set_per_process_memory_fraction(fraction, 0)
++        torch.cuda.empty_cache()
++    update_state(training={"status": "downloading", "step": 0, "total_steps": total_steps,
++                          "round": number, "loss": None, "device": device,
++                          "started_at": started, "finished_at": None,
++                          "reused_data": number > 1, "split": split},
++                 job={"message": "사전학습 모델과 고정 시간순 자료를 준비하고 있습니다"})
++    model_record = PRIVATE / "기반모델.json"
++    base_info = read_json(model_record)
++    if base_info is None:
++        info = HfApi().model_info(MODEL_ID)
++        revision = info.sha
++        snapshot = snapshot_download(MODEL_ID, revision=revision,
++                                     local_dir=str(PRIVATE / "기반모델"),
++                                     allow_patterns=["*.json", "*.safetensors", "LICENSE", "NOTICE", "README.md"])
++        base_info = {"model": MODEL_ID, "revision": revision, "snapshot": snapshot,
++                     "downloaded_at": now_iso(), "pretraining_time_boundary": "확인 불가"}
++        save_json(model_record, base_info)
++    if STOP.exists():
++        raise InterruptedError("모델 준비 후 중지 요청을 확인했습니다")
++    log(f"Chronos-2 실제 로드: {device}, 회차 {number}, {total_steps}단계")
++    resume_source = latest.get("checkpoint")
++    baseline_path = PRIVATE / "기준모델평가.json"
++    baselines = read_json(baseline_path)
++    base_pipeline = None
++    if baselines is None:
++        base_pipeline = Chronos2Pipeline.from_pretrained(base_info["snapshot"], device_map=device, torch_dtype=torch.float32)
++        baselines = {"metrics": [], "details": {}, "created_at": now_iso(), "revision": base_info["revision"]}
++        # 학습 루프는 검증 기준만 만듭니다. 시험 계산은 별도 독립 평가에서 수행합니다.
++        for segment in ("validation",):
++            metrics, details = evaluate(base_pipeline, series, split, segment, context_length, "사전학습 그대로")
++            inputs, actual, previous, _ = evaluation_windows(series, split, segment, context_length)
++            naive = {"model": "무변화 예측", "split": segment, **forecast_metrics(actual, previous, previous)}
++            baselines["metrics"].extend([metrics, naive])
++            baselines["details"][segment] = details
++        save_json(baseline_path, baselines)
++    if resume_source:
++        for filename, expected in latest.get("sha256", {}).items():
++            digest = hashlib.sha256()
++            with (Path(resume_source) / filename).open("rb") as stream:
++                for block in iter(lambda: stream.read(1024 * 1024), b""):
++                    digest.update(block)
++            if digest.hexdigest() != expected:
++                raise RuntimeError("이전 체크포인트의 SHA-256이 저장 기록과 일치하지 않습니다")
++        del base_pipeline
++        gc.collect()
++        if device == "cuda":
++            torch.cuda.empty_cache()
++        pipeline = Chronos2Pipeline.from_pretrained(resume_source, device_map=device, torch_dtype=torch.float32)
++    else:
++        pipeline = base_pipeline or Chronos2Pipeline.from_pretrained(base_info["snapshot"], device_map=device, torch_dtype=torch.float32)
++
++    if STOP.exists():
++        raise InterruptedError("학습 전 검증 전에 중지 요청을 확인했습니다")
++    update_state(training={"status": "evaluating"}, job={"message": "운영 가중치의 학습 전 고정 검증 오차를 확인하고 있습니다"})
++    before_metrics, before_details = evaluate(pipeline, series, split, "validation", context_length, "계속 학습 · 변경 전")
++    if not validation_decision(before_metrics, before_metrics)["accepted"]:
++        raise ValueError("학습 전 고정 검증의 유한한 양수 표본 지표가 없어 학습을 차단했습니다")
++    before_basis = validation_basis(before_details, before_metrics["n"])
++    save_json(run_dir / "학습전검증예측.json", before_details)
++    if STOP.exists():
++        raise InterruptedError("학습 전 검증 뒤 중지 요청을 확인했습니다")
++
++    class Progress(TrainerCallback):
++        def __init__(self):
++            self.last_publish = 0.0
++            self.loss = None
++
++        def on_step_end(self, args, state, control, **kwargs):
++            stopped = STOP.exists()
++            current = time.monotonic()
++            if current - self.last_publish >= 1 or state.global_step >= total_steps or stopped:
++                section = {"status": "training", "step": state.global_step,
++                           "cumulative_steps": latest.get("cumulative_steps", 0) + state.global_step}
++                if self.loss is not None:
++                    section["loss"] = self.loss
++                update_state(training=section, job={"message": f"추가 학습 {state.global_step}/{total_steps}단계"})
++                self.last_publish = current
++            if stopped:
++                control.should_training_stop = True
++            return control
++
++        def on_log(self, args, state, control, logs=None, **kwargs):
++            if logs and "loss" in logs:
++                value = float(logs["loss"])
++                if not np.isfinite(value):
++                    raise FloatingPointError("유한하지 않은 학습 손실로 저장을 중단했습니다")
++                # 유한값 검사는 로그마다 유지하고 전체 상태 파일 발행은 step callback의 1Hz로 제한합니다.
++                self.loss = value
++
++        def on_train_end(self, args, state, control, **kwargs):
++            section = {"step": state.global_step,
++                       "cumulative_steps": latest.get("cumulative_steps", 0) + state.global_step}
++            if self.loss is not None:
++                section["loss"] = self.loss
++            update_state(training=section)
++
++    train_inputs = [np.asarray([row["close"] for row in segment["rows"]], dtype=np.float32)
++                    for segment in corpus["segments"] if segment["eligible"]]
++    if not train_inputs or any(not np.isfinite(values).all() or (values <= 0).any() for values in train_inputs):
++        raise ValueError("실제 모델 입력의 유한한 양의 float32 학습값을 확인하지 못했습니다")
++    new_observations = training_data["post_initial_test_observations"]
++    digest = hashlib.sha256(json.dumps(series, sort_keys=True).encode()).hexdigest()
++    manifest = {"round": number, "started_at": started, "model": MODEL_ID, "revision": base_info["revision"],
++                "initial_checkpoint": resume_source or base_info["snapshot"], "split": split,
++                "frozen_data_sha256": digest, "new_training_data": new_observations > 0,
++                "training_data": training_data,
++                "guard": guard, "before_validation": before_metrics,
++                "post_initial_test_observations": new_observations,
++                "expansion_training_symbols": sorted(extension["series"]),
++                "expansion_train_end": extension["train_end"],
++                "monitoring_symbols": sorted(frozen), "monitoring_scope": "기존 최초3종목 고정구간; 확장15종목 평가지표와 혼합하지 않음",
++                "train_observations": sum(len(values) for values in train_inputs), "steps": total_steps,
++                "batch_size": int(config.get("batch_size", 2)), "context_length": context_length,
++                "device": device, "gpu_memory_fraction": config.get("gpu_memory_fraction", 0.25),
++                "torch": torch.__version__, "method": "full parameter fine-tuning, AdamW, learning_rate=1e-6",
++                "weight_decay": 0.01, "max_grad_norm": 1.0,
++                "optimizer_resume": False, "resume_note": "직전 저장본의 가중치를 이어 사용하며 optimizer 상태는 회차마다 새로 생성"}
++    save_json(run_dir / "실행명세.json", manifest)
++    update_state(training={"status": "training", "resumed": bool(resume_source),
++                          "cumulative_steps": latest.get("cumulative_steps", 0)})
++    tuned = pipeline.fit(inputs=train_inputs, prediction_length=1, min_past=1,
++                         context_length=context_length, learning_rate=1e-6, num_steps=total_steps,
++                         batch_size=int(config.get("batch_size", 2)), output_dir=run_dir,
++                         finetuned_ckpt_name="학습모델", callbacks=[Progress()],
++                         logging_steps=20, logging_nan_inf_filter=False, disable_tqdm=True,
++                         optim="adamw_torch", weight_decay=0.01, max_grad_norm=1.0, bf16=False, tf32=False,
++                         save_strategy="no", report_to="none", seed=42 + number)
++    actual_steps = load_state()["training"]["step"]
++    if type(actual_steps) is not int or not 1 <= actual_steps <= total_steps:
++        raise RuntimeError("예약된 예산 안의 실제 학습 단계가 확인되지 않았습니다")
++    if tuned.model is None:
++        raise RuntimeError("추가 학습 모델이 없습니다")
++    if STOP.exists():
++        save_json(run_dir / "중지기록.json", {"at": now_iso(), "checkpoint_updated": False, "steps": actual_steps})
++        raise InterruptedError("중지 요청으로 학습 중 가중치를 운영 저장본에 반영하지 않았습니다")
++    update_state(training={"status": "evaluating"}, validation={"status": "running"},
++                 job={"message": "같은 모델의 변경 전후 검증 오차를 비교하고 있습니다 · 운영 저장본 보호"})
++    monitor_metrics, monitor_details = evaluate(tuned, series, split, "validation", context_length, "계속 학습 · 현재")
++    save_json(run_dir / "검증예측.json", monitor_details)
++    if STOP.exists():
++        raise InterruptedError("학습 후 검증 뒤 중지 요청으로 운영 저장본 반영을 중단했습니다")
++    decision = validation_decision(before_metrics, monitor_metrics)
++    try:
++        if validation_basis(monitor_details, monitor_metrics["n"]) != before_basis:
++            decision.update(accepted=False, reason="학습 전후 고정 검증 표본의 날짜·자산·정답이 달라 저장을 차단했습니다")
++    except (ValueError, KeyError, TypeError):
++        decision.update(accepted=False, reason="학습 후 고정 검증 표본 식별자를 확인하지 못해 저장을 차단했습니다")
++    save_json(run_dir / "과적합방어결과.json", {**decision, "before": before_metrics,
++              "after": monitor_metrics if validation_decision(monitor_metrics, monitor_metrics)["accepted"] else None})
++    if not decision["accepted"]:
++        finish_attempt(PRIVATE / "과적합방어_5차.json", guard["attempt_id"], "rejected", decision)
++        outcome = {**guard, **decision, "status": "rejected"}
++        update_state(training={"status": "guard_rejected", "guard": outcome,
++                     "cumulative_steps": latest.get("cumulative_steps", 0), "finished_at": now_iso()},
++                     validation={"status": "guard_rejected"}, job={"message": decision["reason"] + " · 기존 저장 가중치 유지"})
++        return outcome
++    metrics = list(baselines["metrics"]) + [monitor_metrics]
++    if STOP.exists():
++        raise InterruptedError("운영 체크포인트 반영 전 중지 요청을 확인했습니다")
++    # 검증 허용을 먼저 영속 기록합니다. 이 기록 자체가 체크포인트 저장 성공은 아닙니다.
++    finish_attempt(PRIVATE / "과적합방어_5차.json", guard["attempt_id"], "accepted", decision)
++    pointer = commit_checkpoint(run_dir / "학습모델", actual_steps, number)
++    update_state(training={"checkpoint": "latest", "checkpoint_saved_at": pointer["saved_at"],
++                          "cumulative_steps": pointer["cumulative_steps"], "guard": {**guard, **decision, "status": "accepted"}})
++    # 시험 자료는 학습·저장 판단에서 완전히 분리합니다. 기존 결과는 발행 뒤 표시용으로만 읽습니다.
++    first_test_status = "unmeasured"
++    first_test_note = "기존 최초 시험 기록이 없습니다. 학습 루프에서는 시험을 계산하거나 기록을 새로 만들지 않습니다."
++    try:
++        initial_test = read_json(PRIVATE / "최초시험평가.json")
++        if initial_test is not None:
++            historical_metrics = initial_test["metrics"]
++            if (not isinstance(historical_metrics, dict)
++                    or any(type(historical_metrics.get(key)) not in (int, float) for key in ("mae", "mape", "n"))
++                    or any(isinstance(value, (int, float)) and not np.isfinite(value)
++                           for value in historical_metrics.values())):
++                raise ValueError("기존 최초 시험 표시 지표가 유효하지 않습니다")
++            metrics.append(historical_metrics)
++            first_test_status = "recorded"
++            first_test_note = "기존 최초 시험 기록을 표시용으로 읽었습니다. 이번 학습의 저장 조건에 사용하지 않았습니다."
++    except (OSError, ValueError, KeyError, TypeError) as error:
++        record_failure(error)
++        first_test_status = "unavailable"
++        first_test_note = "기존 최초 시험 기록을 표시할 수 없습니다. 원본을 보존하며 학습 저장 판단에는 사용하지 않았습니다."
++    from .paper import FX
++    fx = read_json(FX)
++    if fx:
++        metrics = [{**entry, "mae_krw": entry["mae"] * fx["rate"], "mae_currency": "USD 원 오차를 현재 시장환율로 환산한 참고값"}
++                   for entry in metrics]
++    result = {**manifest, "finished_at": now_iso(), "checkpoint": "latest",
++              "metrics": monitor_metrics, "cumulative_steps": pointer["cumulative_steps"],
++              "loss": load_state()["training"].get("loss")}
++    record["rounds"].append(result)
++    save_json(run_dir / "학습결과.json", result)
++    save_json(TRAINING, record)
++    update_state(training={"status": "completed", "finished_at": result["finished_at"],
++                          "checkpoint": "latest", "step": actual_steps,
++                          "model": MODEL_ID, "revision": base_info["revision"]},
++                 validation={"status": "ready", "metrics": metrics,
++                             "first_test_only": True, "split": split,
++                             "first_test_status": first_test_status, "first_test_note": first_test_note,
++                             "coverage_symbols": sorted(frozen),
++                             "coverage_note": "최초3종목 고정 검증·시험만; 확장15종목 독립 평가로 표시하지 않음",
++                             "independent_forward_observations": load_state().get("forward", {}).get("n", 0)})
++    # 동일 모델의 마지막 가중치로 실제 신규 관측 전 전망을 기록합니다.
++    del pipeline
++    gc.collect()
++    if STOP.exists():
++        raise InterruptedError("예측·주문 생성 전 중지 요청을 확인했습니다. 직전 학습 저장본은 보존했습니다")
++    publish_forecasts(tuned, market["series"], context_length, "Chronos-2 계속 학습 latest")
++    del tuned
++    gc.collect()
++    if device == "cuda":
++        torch.cuda.empty_cache()
++    log(f"{number}차 추가 학습 저장 · 누적 {pointer['cumulative_steps']}단계 · 같은 고정 자료 재사용={number > 1}")
++    return result
++
++
++def commit_checkpoint(source, steps, round_number):
++    """완성 파일 검사를 마친 뒤 포인터를 원자 저장하고 직전 복구본 하나를 남깁니다."""
++    from safetensors import safe_open
++    import torch
++    source = Path(source)
++    files = list(source.glob("*.safetensors"))
++    if not files or not (source / "config.json").is_file():
++        raise RuntimeError("완성된 safetensors/config 체크포인트가 없습니다")
++    hashes = {}
++    for path in files:
++        with safe_open(path, framework="pt", device="cpu") as handle:
++            keys = list(handle.keys())
++            if not keys:
++                raise RuntimeError("체크포인트 텐서가 비어 있습니다")
++            for key in keys:
++                tensor = handle.get_tensor(key)
++                finite = bool(torch.isfinite(tensor).all().item())
++                del tensor
++                if not finite:
++                    raise FloatingPointError(f"저장 전 체크포인트의 {key}에 유한하지 않은 값이 있습니다")
++        digest = hashlib.sha256()
++        with path.open("rb") as stream:
++            for block in iter(lambda: stream.read(1024 * 1024), b""):
++                digest.update(block)
++        hashes[path.name] = digest.hexdigest()
++    previous = read_json(LATEST, {})
++    store = LATEST.parent.resolve()
++    store.mkdir(parents=True, exist_ok=True)
++    destination = store / ("저장-" + uuid.uuid4().hex)
++    if STOP.exists():
++        raise InterruptedError("파일 검사 뒤 중지를 확인하여 운영 포인터를 유지했습니다")
++    os.replace(source, destination)
++    pointer = {"checkpoint": str(destination), "previous_checkpoint": previous.get("checkpoint"),
++               "saved_at": now_iso(), "round": round_number,
++               "cumulative_steps": previous.get("cumulative_steps", 0) + steps, "sha256": hashes}
++    if STOP.exists():
++        raise InterruptedError("원자 포인터 발행 직전 중지를 확인하여 운영 포인터를 유지했습니다")
++    save_json(LATEST, pointer)
++    obsolete = previous.get("previous_checkpoint")
++    if obsolete:
++        target = Path(obsolete).resolve()
++        if target.parent != store or not target.name.startswith("저장-"):
++            raise RuntimeError("복구본 정리 경로가 체크포인트 전용 폴더를 벗어났습니다")
++        shutil.rmtree(target)
++    return pointer
++
++
++def publish_forecasts(pipeline, series, context_length, label):
++    if STOP.exists():
++        raise InterruptedError("예측 준비 전 중지 요청을 확인했습니다")
++    symbols = sorted(series)
++    values = predict_values(pipeline, [[row["close"] for row in series[symbol][-context_length:]] for symbol in symbols], context_length)
++    if STOP.exists():
++        raise InterruptedError("예측 계산 중 중지를 확인하여 새 신호와 거래를 발행하지 않습니다")
++    created_at = now_iso()
++    forecasts = [{"symbol": symbol, "as_of": series[symbol][-1]["date"], "horizon_sessions": 1,
++                  "adjusted_price": value, "last_adjusted_price": series[symbol][-1]["close"],
++                  "model": label, "created_at": created_at, "policy_version": 3,
++                  "universe_hash": UNIVERSE_HASH} for symbol, value in zip(symbols, values)]
++    from .paper import FX
++    fx = read_json(FX)
++    if fx:
++        for forecast in forecasts:
++            forecast["adjusted_price_krw"] = forecast["adjusted_price"] * fx["rate"]
++            forecast["last_adjusted_price_krw"] = forecast["last_adjusted_price"] * fx["rate"]
++    ledger = read_json(PRIVATE / "전진예측원장.json", [])
++    for forecast in forecasts:
++        # 같은 날짜 예측을 유리한 후속 값으로 덮어쓰지 않고 최초 등록만 전진 평가합니다.
++        if not any(row["symbol"] == forecast["symbol"] and row["as_of"] == forecast["as_of"]
++                   and row.get("universe_hash") == UNIVERSE_HASH for row in ledger):
++            ledger.append({**forecast, "actual": None, "target_date": None})
++    if STOP.exists():
++        raise InterruptedError("예측 원장 저장 전 중지 요청을 확인했습니다")
++    save_json(PRIVATE / "전진예측원장.json", ledger)
++    signals = read_json(PRIVATE / "모의신호.json", [])
++    origin = min(row["as_of"] for row in forecasts)
++    from .autotrading import select_allocation
++    from .paper import ACCOUNT
++    if not any(row["as_of"] == origin and row.get("policy_version") == 3 and row.get("universe_hash") == UNIVERSE_HASH for row in signals):
++        # 기존 세 종목의 최초 신호는 보존하며 3차 후보 범위의 하루 최초 전망을 별도 고정합니다.
++        account = read_json(ACCOUNT, {})
++        equity = account.get("current_balance_krw", 1000000) / fx["rate"] if fx else 0
++        allocation = select_allocation(forecasts, equity, load_config()["autotrading"])
++        signals.append({"id": "v3:" + created_at, "as_of": origin, "created_at": created_at,
++                        **allocation, "model": label, "policy": allocation["name"]})
++        if STOP.exists():
++            raise InterruptedError("모의 신호 저장 전 중지 요청을 확인했습니다")
++        save_json(PRIVATE / "모의신호.json", signals)
++    update_state(forecasts=forecasts)
++    reconcile_forward(series)
++    from .paper import reconcile_paper
++    if STOP.exists():
++        raise InterruptedError("계좌 재조정 전 중지 요청을 확인했습니다")
++    reconcile_paper(series)
++
++
++def reconcile_forward(series):
++    ledger_path = PRIVATE / "전진예측원장.json"
++    ledger = read_json(ledger_path, [])
++    for entry in ledger:
++        if entry["actual"] is not None:
++            continue
++        future = [row for row in series.get(entry["symbol"], []) if row["date"] > entry["as_of"]]
++        if future:
++            from datetime import time as clock_time
++            from zoneinfo import ZoneInfo
++            closing = datetime.combine(datetime.fromisoformat(future[0]["date"]).date(), clock_time(16), ZoneInfo("America/New_York"))
++            if datetime.fromisoformat(entry["created_at"]) >= closing:
++                entry["excluded_reason"] = "신호 생성 전에 이미 끝난 첫 목표 봉이므로 전진 성과에서 제외"
++                continue
++            entry["actual"] = future[0]["close"]
++            entry["target_date"] = future[0]["date"]
++            entry["resolved_at"] = now_iso()
++    save_json(ledger_path, ledger)
++    completed = [row for row in ledger if row["actual"] is not None and row.get("universe_hash") == UNIVERSE_HASH]
++    previous = [row for row in ledger if row["actual"] is not None and row.get("universe_hash") is None]
++    forward = {"status": "ready" if completed else "pending", "n": len(completed),
++               "message": "3차 후보 범위에서 신호 생성 뒤 새 완결 일봉을 기다리고 있습니다",
++               "universe_hash": UNIVERSE_HASH, "coverage_symbols": sorted({r["symbol"] for r in completed}),
++               "previous_scope": {"n": len(previous), "coverage_symbols": sorted({r["symbol"] for r in previous}),
++                                  "note": "기존3종목 최초 전진 기록, 새 후보 범위 수치와 합산하지 않음"}}
++    if completed:
++        forward.update(forecast_metrics([row["actual"] for row in completed],
++                                       [row["adjusted_price"] for row in completed],
++                                       [row["last_adjusted_price"] for row in completed]))
++    update_state(forward=forward)
++    return forward
+diff --git a/6차/src/overfit_guard.py b/6차/src/overfit_guard.py
+new file mode 100644
+index 0000000..23324ab
+--- /dev/null
++++ b/6차/src/overfit_guard.py
+@@ -0,0 +1,117 @@
++"""새 관측별 제한 학습과 저장 전 검증으로 과적합 위험을 줄입니다."""
++
++from datetime import date
++import math
++from pathlib import Path
++import uuid
++
++from .core import now_iso, read_json, save_json
++
++
++MONITOR_SCOPE = "최초3종목 고정 검증의 반복 모니터링; 독립 평가·15종목 성과·수익 또는 과적합 부재 보장 아님"
++
++
++def _load_ledger(path):
++    path = Path(path)
++    if not path.exists():
++        return {"schema_version": 1, "consumed_dates": {}, "attempts": []}
++    try:
++        ledger = read_json(path)
++        if (not isinstance(ledger, dict) or ledger.get("schema_version") != 1
++                or not isinstance(ledger.get("consumed_dates"), dict)
++                or not isinstance(ledger.get("attempts"), list) or not ledger["attempts"]):
++            raise ValueError("필수 필드 또는 실행 이력이 없습니다")
++        union, ids = {}, set()
++        for attempt in ledger["attempts"]:
++            if (not isinstance(attempt, dict) or not isinstance(attempt.get("attempt_id"), str)
++                    or attempt["attempt_id"] in ids or attempt.get("status") not in
++                    ("reserved", "accepted", "rejected", "failed", "interrupted")
++                    or type(attempt.get("budget_steps")) is not int or not 1 <= attempt["budget_steps"] <= 25
++                    or not isinstance(attempt.get("dates"), dict) or not attempt["dates"]):
++                raise ValueError("실행 이력이 유효하지 않습니다")
++            ids.add(attempt["attempt_id"])
++            for symbol, days in attempt["dates"].items():
++                _validate_dates(symbol, days)
++                if union.setdefault(symbol, set()).intersection(days):
++                    raise ValueError("이미 소비한 날짜가 중복 예약되었습니다")
++                union[symbol].update(days)
++        for symbol, days in ledger["consumed_dates"].items():
++            _validate_dates(symbol, days)
++        if {key: sorted(value) for key, value in union.items()} != ledger["consumed_dates"]:
++            raise ValueError("예약 이력과 소비 날짜가 다릅니다")
++        return ledger
++    except (ValueError, TypeError, KeyError, AttributeError) as error:
++        raise RuntimeError("과적합 방어 원장이 손상되어 추가 학습을 차단했습니다") from error
++
++
++def _validate_dates(symbol, days):
++    if not isinstance(symbol, str) or not symbol or not isinstance(days, list) or not days:
++        raise ValueError("자산·날짜가 유효하지 않습니다")
++    if any(not isinstance(day, str) or date.fromisoformat(day).isoformat() != day for day in days):
++        raise ValueError("날짜 형식이 유효하지 않습니다")
++    if days != sorted(set(days)):
++        raise ValueError("날짜가 정렬되지 않았거나 중복되었습니다")
++
++
++def reserve_training(path, corpus, requested_steps, batch_size):
++    """fit 전에 날짜를 원자적으로 소비하며 실패·재시작 때 되돌리지 않습니다."""
++    if type(requested_steps) is not int or not 1 <= requested_steps <= 1000 or type(batch_size) is not int or batch_size < 1:
++        raise ValueError("학습 단계·배치 설정이 유효하지 않습니다")
++    ledger = _load_ledger(path)
++    available, windows = {}, 0
++    for segment in corpus["segments"]:
++        if not segment["eligible"]:
++            continue
++        days = sorted({row["date"] for row in segment["rows"]})
++        _validate_dates(segment["symbol"], days)
++        if len(days) < 2:
++            raise ValueError("학습 가능 구간은 최소 두 관측이 필요합니다")
++        available.setdefault(segment["symbol"], set()).update(days)
++        windows += len(days) - 1
++    new_dates = {symbol: sorted(days - set(ledger["consumed_dates"].get(symbol, [])))
++                 for symbol, days in available.items()}
++    new_dates = {symbol: days for symbol, days in new_dates.items() if days}
++    count = sum(map(len, new_dates.values()))
++    result = {"status": "waiting_new_data", "reason": "새 학습 가능 관측 날짜를 기다립니다. 수집·모의운용은 계속합니다.",
++              "new_observations": count, "budget_steps": 0, "max_steps": 25,
++              "monitor_scope": MONITOR_SCOPE, "wait_seconds": 300,
++              "sampling_note": "전체 허용 자료를 재사용하되 무작위 표본 때문에 모든 행의 매회 학습을 보장하지 않음"}
++    if not count or not windows:
++        return result
++    budget = min(requested_steps, 25, math.ceil(count / batch_size), max(1, math.ceil(windows / batch_size)))
++    result.update(status="reserved", reason="새 날짜의 제한 학습을 예약했습니다. 검증 전 운영 가중치를 바꾸지 않습니다.",
++                  budget_steps=budget, bootstrap=not ledger["attempts"], attempt_id=uuid.uuid4().hex)
++    attempt = {**result, "reserved_at": now_iso(), "dates": new_dates}
++    ledger["attempts"].append(attempt)
++    ledger["consumed_dates"] = {symbol: sorted(set(ledger["consumed_dates"].get(symbol, [])) | available.get(symbol, set()))
++                                for symbol in sorted(set(ledger["consumed_dates"]) | set(available))}
++    save_json(path, ledger)
++    return result
++
++
++def finish_attempt(path, attempt_id, status, report=None):
++    if status not in ("accepted", "rejected", "failed", "interrupted"):
++        raise ValueError("학습 예약 종료 상태가 유효하지 않습니다")
++    ledger = _load_ledger(path)
++    matches = [entry for entry in ledger["attempts"] if entry["attempt_id"] == attempt_id]
++    if len(matches) != 1 or matches[0]["status"] != "reserved":
++        raise RuntimeError("과적합 방어 원장의 예약 상태가 일치하지 않습니다")
++    matches[0].update(status=status, finished_at=now_iso(), report=report or {})
++    save_json(path, ledger)
++
++
++def validation_decision(before, after):
++    """같은 고정 검증 MAE·MAPE 중 하나라도 악화하면 저장을 거부합니다."""
++    result = {"accepted": False, "reason": "고정 검증의 유한한 동일 표본 지표를 확인하지 못했습니다.",
++              "tolerance_fraction": 0.0, "monitor_scope": MONITOR_SCOPE}
++    for metrics in (before, after):
++        if (not isinstance(metrics, dict) or type(metrics.get("n")) is not int or metrics["n"] <= 0
++                or any(type(metrics.get(key)) not in (int, float) or not math.isfinite(metrics[key])
++                       or metrics[key] < 0 for key in ("mae", "mape"))):
++            return result
++    if before["n"] != after["n"]:
++        return result
++    worsened = [key for key in ("mae", "mape") if after[key] > before[key]]
++    result.update(accepted=not worsened, reason="고정 검증 오차 악화: " + ", ".join(worsened) if worsened
++                  else "같은 고정 검증에서 MAE·MAPE 악화 없음; 미래 성능 보장 아님")
++    return result
+diff --git a/6차/src/paper.py b/6차/src/paper.py
+new file mode 100644
+index 0000000..b2964fa
+--- /dev/null
++++ b/6차/src/paper.py
+@@ -0,0 +1,166 @@
++"""원화 모의계좌 공통 계산과 과거 일봉 비교입니다. 실제 운용 체결은 새 완결 1분봉 경로로 위임합니다."""
++
++from datetime import datetime, time, timezone
++import math
++from zoneinfo import ZoneInfo
++
++from .core import common_dates, now_iso, read_json, save_json
++from .runtime import PRIVATE, load_config, update_state
++from .fees import POLICY, affordable_quantity, convert_won, floor_quantity, fx_spread_bps, trade_fees
++
++
++ACCOUNT = PRIVATE / "모의계좌.json"
++FX = PRIVATE / "환율.json"
++
++
++def validate_weights(weights):
++    if not weights or any(not math.isfinite(float(value)) or value < 0 for value in weights.values()):
++        raise ValueError("공매도나 유효하지 않은 배분은 허용하지 않습니다")
++    if abs(sum(weights.values()) - 1) > 1e-8:
++        raise ValueError("레버리지 없이 배분 합계가 1이어야 합니다")
++
++
++def session_open(day):
++    # 미국 현지 09:30의 서머타임을 반영하며 고정 UTC 시각을 쓰지 않습니다.
++    return datetime.combine(datetime.fromisoformat(day).date(), time(9, 30), ZoneInfo("America/New_York")).astimezone(timezone.utc)
++
++
++def create_account(fx, as_of, spread_bps=None):
++    spread_bps = fx_spread_bps() if spread_bps is None else spread_bps
++    if not 0 <= spread_bps <= 1000:
++        raise ValueError("환전 스프레드 가정 범위를 확인해 주세요")
++    account = {"status": "waiting_fx", "initial_capital_krw": 1000000,
++               "current_balance_krw": 1000000, "cash_krw": 1000000, "cash_usd": None,
++               "cash_usd_value_krw": None, "positions": [], "pnl_krw": 0, "pnl_pct": 0,
++               "fees_krw": 0.0, "fees_usd": 0.0, "exchange_cost_krw": 0.0,
++               "initial_fx": None, "initial_value_usd": None, "fx": fx,
++               "fx_receipt": None, "trades": [], "last_processed": as_of,
++               "last_signal_id": None, "as_of": as_of, "created_at": now_iso(),
++               "message": "실제 시장 환율 확보 전 환산·체결 대기", "history": []}
++    if fx:
++        rate = float(fx["rate"])
++        if not math.isfinite(rate) or rate <= 0:
++            raise ValueError("유효한 원/달러 환율이 필요합니다")
++        receipt = convert_won(1000000, rate, spread_bps)
++        cost = receipt["cost_krw"]
++        dollars = receipt["received_usd"]
++        account.update(status="ready", cash_krw=0, cash_usd=dollars,
++                       cash_usd_value_krw=dollars * rate, current_balance_krw=dollars * rate,
++                       pnl_krw=-cost, pnl_pct=-cost / 1000000, initial_fx=rate,
++                       initial_value_usd=dollars, exchange_cost_krw=cost,
++                       message="가상 환전 완료 · 신호 생성 뒤의 새 거래일 시가를 기다립니다",
++                       fx_receipt={**receipt,
++                                   "source": fx["source"], "as_of": fx["as_of"], "created_at": now_iso()})
++    return account
++
++
++def mark_account(account, latest_rows, fx):
++    if not fx or account["cash_usd"] is None:
++        return account
++    rate = float(fx["rate"])
++    total_usd = account["cash_usd"]
++    for position in account["positions"]:
++        row = latest_rows.get(position["symbol"])
++        price = row["raw_close"] if row else position["price_usd"]
++        position.update(price_usd=price, value_usd=position["quantity"] * price,
++                        price_krw=price * rate, value_krw=position["quantity"] * price * rate)
++        total_usd += position["value_usd"]
++    value = account["cash_krw"] + total_usd * rate
++    account.update(current_balance_krw=value, pnl_krw=value - account["initial_capital_krw"],
++                   pnl_pct=value / account["initial_capital_krw"] - 1, cash_usd_value_krw=account["cash_usd"] * rate,
++                   fx=fx, valuation_at=now_iso())
++    return account
++
++
++def advance_account(account, series, fx, signals):
++    if not fx or account["cash_usd"] is None:
++        return account
++    dates = common_dates(series)
++    lookup = {symbol: {row["date"]: row for row in rows} for symbol, rows in series.items()}
++    positions = {position["symbol"]: dict(position) for position in account["positions"]}
++    for day in dates:
++        if day <= account["last_processed"]:
++            continue
++        opening = session_open(day)
++        day_fx = fx_for_day(fx, day)
++        if not day_fx:
++            break
++        # 실제 생성시각보다 앞선 시가에 소급 체결하지 않습니다.
++        available = [signal for signal in signals if signal["as_of"] < day
++                     and datetime.fromisoformat(signal["created_at"]) < opening]
++        eligible = max(available, key=lambda signal: signal["created_at"]) if available else None
++        for symbol, position in positions.items():
++            row = lookup[symbol][day]
++            split = row.get("split", 0)
++            if split > 0:
++                position["quantity"] *= split
++            account["cash_usd"] += position["quantity"] * row.get("dividend", 0)
++        if eligible and eligible.get("id", eligible["created_at"]) != account["last_signal_id"]:
++            weights = eligible["weights"]
++            validate_weights(weights)
++            if set(weights) != set(series):
++                raise ValueError("신호와 시세의 종목이 일치하지 않습니다")
++            open_prices = {symbol: lookup[symbol][day].get("raw_open", lookup[symbol][day]["open"]) for symbol in series}
++            old_values = {symbol: positions.get(symbol, {}).get("quantity", 0) * open_prices[symbol] for symbol in series}
++            wealth = account["cash_usd"] + sum(old_values.values())
++            # 매도 후 가용 달러 현금 안에서 매수하며 수수료·소수점 수량을 함께 계산합니다.
++            for side in ("sell", "buy"):
++                for symbol in sorted(series):
++                    price = open_prices[symbol]
++                    existing = positions.get(symbol, {}).get("quantity", 0)
++                    difference = wealth * weights[symbol] / price - existing
++                    if (side == "sell" and difference >= 0) or (side == "buy" and difference <= 0):
++                        continue
++                    quantity = floor_quantity(min(existing, -difference)) if side == "sell" else affordable_quantity(account["cash_usd"], price, difference)
++                    if quantity <= 0:
++                        continue
++                    amount = quantity * price
++                    fee_parts = trade_fees(amount, side)
++                    fee = fee_parts["total_usd"]
++                    if side == "sell" and amount <= fee:
++                        continue
++                    account["cash_usd"] += amount - fee if side == "sell" else -amount - fee
++                    if account["cash_usd"] < -1e-8:
++                        raise ArithmeticError("모의 주문이 가용 달러 현금을 초과했습니다")
++                    account["cash_usd"] = max(0.0, account["cash_usd"])
++                    new_quantity = existing - quantity if side == "sell" else existing + quantity
++                    positions[symbol] = {"symbol": symbol, "quantity": new_quantity, "price_usd": price}
++                    account["trades"].append({"symbol": symbol, "side": "매수" if side == "buy" else "매도",
++                        "quantity": quantity, "price_usd": price, "amount_usd": amount,
++                        "amount_krw": amount * day_fx["rate"], "fee_usd": fee, "fee_krw": fee * day_fx["rate"],
++                        **fee_parts, "fx_rate": day_fx["rate"], "signal_date": eligible["as_of"],
++                        "signal_created_at": eligible["created_at"], "execution_date": day,
++                        "execution_open_utc": opening.isoformat(),
++                        "assumption": "실제 일봉 시가의 가상체결 · 일반 공시 요율 적용 · 실제 토스 체결 아님"})
++                    account["fees_usd"] += fee
++                    account["fees_krw"] += fee * day_fx["rate"]
++            account["last_signal_id"] = eligible.get("id", eligible["created_at"])
++        account["positions"] = list(positions.values())
++        account["last_processed"] = day
++        account["as_of"] = day
++        mark_account(account, {symbol: lookup[symbol][day] for symbol in series}, day_fx)
++        account["history"].append({"date": day, "value_krw": account["current_balance_krw"], "fx_rate": day_fx["rate"]})
++    if dates:
++        mark_account(account, {symbol: lookup[symbol][dates[-1]] for symbol in series}, fx)
++    account["status"] = "running" if account["trades"] else "ready"
++    account["message"] = "모델 신호의 다음 거래일 모의체결 기록" if account["trades"] else "새 신호 생성 이후의 거래일 시가를 기다립니다"
++    return account
++
++
++def reconcile_paper(series):
++    # 실제 운용은 주문 이후 완결된 단기 관측 경로를 사용합니다. advance_account는 과거 정책 비교용입니다.
++    from .autotrading import reconcile
++    return reconcile(series)
++
++
++def fx_for_day(fx, day):
++    rates = [row for row in fx.get("rates", []) if row["date"] <= day]
++    if rates:
++        row = max(rates, key=lambda value: value["date"])
++        return {"rate": row["rate"], "as_of": row["date"], "source": fx["source"],
++                "fetched_at": fx.get("fetched_at")}
++    if fx.get("as_of", "9999") <= day:
++        return {key: value for key, value in fx.items() if key != "rates"}
++    return None
++
++
+diff --git a/6차/src/runtime.py b/6차/src/runtime.py
+new file mode 100644
+index 0000000..262ffe9
+--- /dev/null
++++ b/6차/src/runtime.py
+@@ -0,0 +1,158 @@
++"""로컬 비공개 상태와 단일 작업 잠금을 관리합니다."""
++
++from contextlib import contextmanager
++from datetime import datetime, timedelta, timezone
++import json
++import os
++from pathlib import Path
++import sys
++import threading
++import traceback
++
++from .core import now_iso, read_json, save_json
++from .universe import DEFAULT_POLICY, SYMBOLS
++
++
++ROOT = Path(__file__).resolve().parents[1]
++ENV_ROOT = ROOT.parent / "1차"
++# 검사는 별도 경로를 지정하며, 실제 전환 뒤에는 기존 원장·모델 저장소를 그대로 사용합니다.
++PRIVATE = Path(os.environ.get("ETF_PRIVATE_DIR", str(ENV_ROOT / "work" / "비공개"))).resolve()
++STATE = PRIVATE / "운영상태.json"
++CONFIG = PRIVATE / "개인설정.json"
++STOP = PRIVATE / "중지요청"
++LOCK = PRIVATE / "작업잠금"
++STATE_MUTEX = threading.RLock()
++
++
++def load_config():
++    config = read_json(CONFIG)
++    if config is None:
++        config = {"monthly_contribution": 0, "currency": "KRW",
++                  "symbols": list(SYMBOLS), "train_steps": 20, "batch_size": 2,
++                  "context_length": 256, "gpu_memory_fraction": 0.25,
++                  "refresh_seconds": 21600, "fee_bps": 10, "fx_spread_bps": 50}
++        save_json(CONFIG, config)
++    policy = {**DEFAULT_POLICY, **read_json(PRIVATE / "자동운용설정.json", {})}
++    if not (1 <= int(policy["max_positions"]) <= 3 and 0 <= float(policy["cash_reserve"]) <= 1
++            and 0 < float(policy["max_weight"]) <= 1 and 0 <= float(policy["minimum_edge"]) <= 1
++            and 60 <= int(policy["quote_poll_seconds"]) <= 3600
++            and 60 <= int(policy["quote_max_age_seconds"]) <= 1200):
++        raise ValueError("자동운용 정책의 현금·수량·시세 제한을 확인해 주세요")
++    # 기존 개인설정 원본을 덮지 않고 이번 차수의 후보 범위만 별도 정책층에서 합성합니다.
++    return {**config, "symbols": list(SYMBOLS), "autotrading": policy}
++
++
++def initial_state():
++    return {"schema_version": 1, "updated_at": now_iso(), "holdings": [],
++            "portfolio": {"total_value": 1000000, "currency": "KRW", "as_of": None,
++                          "cost_basis": 1000000, "pnl": 0, "monthly_contribution": 0},
++            "paper": {"status": "waiting_fx", "initial_capital_krw": 1000000,
++                      "current_balance_krw": 1000000, "cash_krw": 1000000, "cash_usd": None,
++                      "positions": [], "pnl_krw": 0, "pnl_pct": 0, "fx": None,
++                      "fees_krw": 0, "exchange_cost_krw": 0, "message": "환율 확보 전 환산·체결 대기"},
++            "history": [], "data": {"status": "idle", "source": "Yahoo Finance / yfinance",
++                "rows": 0, "new_rows": 0, "symbols": [], "as_of": None,
++                "adjustment": "배당·분할 조정 OHLC로 연구; 보유 평가는 비조정 마지막 종가"},
++            "training": {"status": "idle", "step": 0, "total_steps": 0, "loss": None,
++                "round": 0, "new_rows": 0, "checkpoint": None, "device": None},
++            "validation": {"status": "pending", "metrics": []},
++            "simulation": {"strategies": [], "assumptions": []},
++            "job": {"status": "idle", "action": None, "message": "실행 대기", "continuous": False,
++                    "next_run_at": None}, "logs": [], "forecasts": [], "forward": {"status": "pending", "n": 0},
++            "notes": ["실제 주문 기능은 없습니다. 토스 Open API 계좌 인증·주문은 연결하지 않았습니다.",
++                "QQQM은 2020년 설정입니다. 최초3종목의 고정 검증·시험과 확장15후보 운용을 구분합니다.",
++                "SPYM의 과거 티커는 SPLG이며 과거 추종 지수 변경 이력이 있습니다.",
++                "무료 일봉은 지연 시세입니다. 당일 미완결 봉은 학습에서 제외합니다.",
++                "자동매매 후보는 지정15개 ETF이며 모든 ETF·토스 실제 지원 종목을 검증한 범위가 아닙니다.",
++                "주문 이후 시작된 정규장 완결1분봉만 가상체결하며 무료 관측은 최대20분 지연까지 허용합니다.",
++                "장 종료·시세 실패·오래된 관측이면 대기합니다. 실제 토스 호가·주문·부분체결을 재현하지 않습니다.",
++                "개인 실제 보유와 별개로 원금 100만원의 가상계좌만 운용합니다. 추가입금은 0원입니다.",
++                "조정 가격 연구에는 배당 재투자 가정이 있으며 환전·세금·실제 호가 차이는 포함하지 않습니다.",
++                "Chronos-2 사전학습의 개별 자산·시점 경계가 확인되지 않아 엄격한 역사적 미관측 시험을 보장하지 않습니다.",
++                "같은 고정 학습·검증 구간의 반복 학습은 새 독립 성과가 아닙니다. 검증 구간 선택 편향이 누적될 수 있습니다.",
++                "5차는 최초 1회와 새 학습 가능 관측 날짜가 생긴 때 최대25단계만 학습합니다. 같은 관측 집합만으로 새 회차를 반복 예약하지 않습니다.",
++                "새 날짜로 허용된 회차에서는 과거 허용 자료도 다시 표본이 될 수 있습니다. 무작위 표본이므로 모든 새 행의 매회 학습을 보장하지 않습니다.",
++                "새 날짜가 없으면 학습을 대기하고 수집·모의운용을 계속합니다. 값 수정·수집 시각 변화만으로 재학습하지 않습니다.",
++                "같은 모델의 변경 전후 고정 검증 MAE·MAPE가 악화하면 새 가중치를 운영에 반영하지 않습니다. 과적합 부재나 수익은 보장하지 않습니다.",
++                "4차는 제공 가능한 ETF 전체 과거 일봉과 원·달러 환율을 학습에 추가합니다. 고정 검증·시험 날짜는 모든 자산에서 제외합니다.",
++                "환율은 별도 단변량 시계열 학습입니다. ETF 예측의 환율 공변량이나 인과관계 학습으로 해석하지 않습니다.",
++                "최초 시험 종료일 이후 새 일봉이 2개 이상 쌓이면 별도 시계열로 이어 학습합니다. 그 구간은 독립 시험 성과로 사용하지 않습니다.",
++                "PC가 켜져 있고 로컬 프로세스가 실행 중일 때만 반복합니다. 전원 종료 중에는 동작하지 않습니다.",
++                "10년 이상은 투자 계획 기간입니다. 단기 모델 출력은 10년 수익 예측이 아닙니다."]}
++
++
++def load_state():
++    return read_json(STATE, initial_state())
++
++
++def update_state(**sections):
++    with STATE_MUTEX:
++        state = load_state()
++        for key, value in sections.items():
++            if isinstance(value, dict) and isinstance(state.get(key), dict):
++                state[key].update(value)
++            else:
++                state[key] = value
++        state["updated_at"] = now_iso()
++        save_json(STATE, state)
++        return state
++
++
++def log(message, level="info"):
++    with STATE_MUTEX:
++        state = load_state()
++        entries = state.get("logs", [])
++        entries.append({"time": now_iso(), "level": level, "message": str(message)})
++        update_state(logs=entries[-120:])
++
++
++def record_failure(error, argv=None):
++    PRIVATE.mkdir(parents=True, exist_ok=True)
++    entry = {"한국시각": datetime.now(timezone(timedelta(hours=9))).isoformat(),
++             "argv": argv or sys.argv, "cwd": os.getcwd(), "exit_code": 1,
++             "error": str(error), "traceback": traceback.format_exc(),
++             "당시변경": "운영상태·로그는 갱신 가능; 소스는 이 함수에서 수정하지 않음"}
++    with (PRIVATE / "실패이력.jsonl").open("a", encoding="utf-8", newline="\n") as stream:
++        stream.write(json.dumps(entry, ensure_ascii=False) + "\n")
++
++
++@contextmanager
++def worker_lock(lock_path=None):
++    PRIVATE.mkdir(parents=True, exist_ok=True)
++    with (lock_path or LOCK).open("a+b") as stream:
++        stream.seek(0)
++        # Windows의 배타 잠금 byte는 읽기 자체도 금지하므로 크기만 확인합니다.
++        if os.fstat(stream.fileno()).st_size == 0:
++            stream.write(b"0")
++            stream.flush()
++        stream.seek(0)
++        if os.name == "nt":
++            import msvcrt
++            try:
++                msvcrt.locking(stream.fileno(), msvcrt.LK_NBLCK, 1)
++            except OSError as error:
++                raise RuntimeError("다른 수집·학습 작업이 실행 중입니다") from error
++        else:
++            import fcntl
++            try:
++                fcntl.flock(stream.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
++            except BlockingIOError as error:
++                raise RuntimeError("다른 수집·학습 작업이 실행 중입니다") from error
++        try:
++            yield
++        finally:
++            stream.seek(0)
++            if os.name == "nt":
++                msvcrt.locking(stream.fileno(), msvcrt.LK_UNLCK, 1)
++            else:
++                fcntl.flock(stream.fileno(), fcntl.LOCK_UN)
++
++
++def is_busy():
++    try:
++        # 감시자 기동 중에는 조회가 학습자의 작업 잠금을 먼저 잡지 않습니다.
++        with worker_lock(PRIVATE / "운용감시잠금"):
++            with worker_lock():
++                return False
++    except RuntimeError:
++        return True
+diff --git a/6차/src/training_data.py b/6차/src/training_data.py
+new file mode 100644
+index 0000000..743b741
+--- /dev/null
++++ b/6차/src/training_data.py
+@@ -0,0 +1,154 @@
++"""고정 평가 구간을 제외한 전체 과거·신규 학습자료를 보존합니다."""
++
++from datetime import date, datetime, timezone
++import hashlib
++import json
++import math
++import os
++from pathlib import Path
++import tempfile
++
++from .core import read_json, save_json, session_completed
++
++
++def _encoded(value):
++    return (json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"),
++                       allow_nan=False) + "\n").encode("utf-8")
++
++
++def save_snapshot(root, category, value):
++    """내용이 같은 자료는 한 번만 저장하고 기존 파일의 무결성을 확인합니다."""
++    root = Path(root)
++    encoded = _encoded(value)
++    digest = hashlib.sha256(encoded).hexdigest()
++    relative = Path("자료스냅샷_4차") / category / (digest + ".json")
++    path = root / relative
++    path.parent.mkdir(parents=True, exist_ok=True)
++    if path.exists():
++        if hashlib.sha256(path.read_bytes()).hexdigest() != digest:
++            raise RuntimeError("보존 자료 스냅샷 해시가 일치하지 않습니다")
++    else:
++        # 완성된 임시 파일만 이동하여 쓰기 실패가 영구 해시 파일을 오염시키지 않게 합니다.
++        descriptor, temporary = tempfile.mkstemp(prefix=".스냅샷-", suffix=".tmp", dir=path.parent)
++        try:
++            with os.fdopen(descriptor, "wb") as stream:
++                stream.write(encoded)
++                stream.flush()
++                os.fsync(stream.fileno())
++            os.replace(temporary, path)
++        finally:
++            if os.path.exists(temporary):
++                os.unlink(temporary)
++    return {"path": relative.as_posix(), "sha256": digest, "bytes": len(encoded)}
++
++
++def _rows(rows, as_of, field="close"):
++    result = {}
++    for original in rows:
++        row = dict(original)
++        day = row["date"]
++        if date.fromisoformat(day).isoformat() != day or not session_completed(day, as_of):
++            raise ValueError(f"{day}: 미래·미완결 또는 잘못된 날짜의 학습자료입니다")
++        value = float(row[field])
++        if not math.isfinite(value) or value <= 0:
++            raise ValueError(f"{day}: 유효하지 않은 학습 관측값입니다")
++        row[field] = value
++        if "open" in row and (not math.isfinite(float(row["open"])) or float(row["open"]) <= 0):
++            raise ValueError(f"{day}: 유효하지 않은 시가입니다")
++        if day in result and result[day] != row:
++            raise ValueError(f"{day}: 중복 날짜의 값이 다릅니다")
++        result[day] = row
++    return result
++
++
++def build_training_corpus(market_series, frozen, extension, fx, split, as_of=None, previous=None):
++    """검증·시험 사이를 잇지 않고 종목·환율별 두 독립 구간을 구성합니다."""
++    as_of = as_of or datetime.now(timezone.utc).isoformat()
++    train_end, test_end = split["train_end"], split["test_end"]
++    if train_end >= test_end:
++        raise ValueError("고정 학습·시험 경계의 순서가 잘못되었습니다")
++    if previous is not None:
++        if not isinstance(previous, dict) or previous.get("schema_version") != 1 or not isinstance(previous.get("segments"), list):
++            raise RuntimeError("4차 보존 학습자료의 스키마가 유효하지 않습니다")
++        if previous.get("split") != split:
++            raise RuntimeError("4차 보존 학습자료의 고정 분할이 변경되었습니다")
++    previous_rows = {}
++    for segment in (previous or {}).get("segments", []):
++        if (not isinstance(segment, dict) or segment.get("period") not in ("historical", "post_test")
++                or segment.get("kind") not in ("etf", "fx")
++                or not isinstance(segment.get("symbol"), str) or not segment["symbol"]
++                or (segment["kind"] == "fx") != (segment["symbol"] == "KRW=X")
++                or not isinstance(segment.get("rows"), list) or not segment["rows"]
++                or any(not isinstance(row, dict) for row in segment["rows"])):
++            raise RuntimeError("4차 보존 학습자료의 구간 메타데이터가 유효하지 않습니다")
++        key = (segment["symbol"], segment["period"])
++        if key in previous_rows:
++            raise RuntimeError("보존 학습자료의 구간이 중복되었습니다")
++        try:
++            values = _rows(segment["rows"], as_of)
++        except (ValueError, KeyError, TypeError) as error:
++            raise RuntimeError("4차 보존 학습자료의 관측값이 유효하지 않습니다") from error
++        if any(not (day <= train_end if key[1] == "historical" else day > test_end) for day in values):
++            raise RuntimeError("보존 학습자료가 고정 평가 제외 구간을 침범했습니다")
++        previous_rows[key] = values
++    sources = {symbol: ("etf", _rows(rows, as_of)) for symbol, rows in market_series.items()}
++    rates = _rows(fx.get("rates", []), as_of, "rate")
++    if rates:
++        sources["KRW=X"] = ("fx", {day: {"date": day, "close": row["rate"]} for day, row in rates.items()})
++    # 최초 고정값과 3차 확장값은 같은 날짜의 후속 조정값보다 우선합니다.
++    for source in (extension, frozen):
++        for symbol, rows in source.items():
++            known = sources.setdefault(symbol, ("etf", {}))[1]
++            known.update(_rows(rows, as_of))
++    for symbol, _ in previous_rows:
++        sources.setdefault(symbol, ("fx" if symbol == "KRW=X" else "etf", {}))
++    segments, new_count, revisions = [], 0, 0
++    for symbol, (kind, rows) in sorted(sources.items()):
++        for period in ("historical", "post_test"):
++            selected = {day: value for day, value in rows.items()
++                        if (day <= train_end if period == "historical" else day > test_end)}
++            old = previous_rows.get((symbol, period), {})
++            revisions += sum(day in old and old[day] != value for day, value in selected.items())
++            new_count += len(selected.keys() - old.keys())
++            selected.update(old)
++            if selected:
++                ordered = [selected[day] for day in sorted(selected)]
++                segments.append({"symbol": symbol, "kind": kind, "period": period, "rows": ordered,
++                                 "eligible": len(ordered) >= 2})
++    eligible = [segment for segment in segments if segment["eligible"]]
++    summary = {"symbols": sorted({segment["symbol"] for segment in segments}),
++               "etf_symbols": sorted({segment["symbol"] for segment in segments if segment["kind"] == "etf"}),
++               "fx_symbols": sorted({segment["symbol"] for segment in segments if segment["kind"] == "fx"}),
++               "series_count": len(eligible), "min_past": 1, "prediction_length": 1,
++               "train_observations": sum(len(segment["rows"]) for segment in eligible),
++               "pending_observations": sum(len(segment["rows"]) for segment in segments if not segment["eligible"]),
++               "new_observations": new_count, "preserved_revision_observations": revisions,
++               "post_initial_test_observations": sum(len(segment["rows"]) for segment in eligible if segment["period"] == "post_test"),
++               "fx_role": "독립 단변량 학습 시계열; ETF 공변량 아님"}
++    summary["segments"] = [{key: segment[key] for key in ("symbol", "kind", "period", "eligible")}
++                           | {"rows": len(segment["rows"]), "start": segment["rows"][0]["date"],
++                              "end": segment["rows"][-1]["date"]} for segment in segments]
++    return {"schema_version": 1, "split": dict(split), "segments": segments, "summary": summary}
++
++
++def prepare_training_corpus(root, market, frozen, extension, fx, split, as_of=None):
++    """실제 입력 스냅샷과 누적 포인터를 저장하고 회차에는 참조만 전달합니다."""
++    root = Path(root)
++    pointer_path = root / "학습자료포인터_4차.json"
++    pointer = read_json(pointer_path)
++    previous = None
++    if pointer:
++        path = root / pointer["corpus"]["path"]
++        if hashlib.sha256(path.read_bytes()).hexdigest() != pointer["corpus"]["sha256"]:
++            raise RuntimeError("4차 보존 학습자료 해시가 일치하지 않습니다")
++        previous = read_json(path)
++    corpus = build_training_corpus(market["series"], frozen, extension, fx, split, as_of, previous)
++    frozen_payload = {key: corpus[key] for key in ("schema_version", "split", "segments")}
++    reference = save_snapshot(root, "학습입력", frozen_payload)
++    source = save_snapshot(root, "입력출처", {"market": market, "fx": fx,
++                                            "original_frozen": frozen, "legacy_extension": extension})
++    manifest = {"corpus": reference, "source": source, "as_of": as_of or datetime.now(timezone.utc).isoformat(),
++                **corpus["summary"], "excluded_period": {"after": split["train_end"], "through": split["test_end"]},
++                "revision_policy": "최초 고정자료·3차 확장자료 및 4차 최초 보존값 우선; 새 날짜만 추가"}
++    save_json(pointer_path, manifest)
++    return corpus, manifest
+diff --git a/6차/src/universe.py b/6차/src/universe.py
+new file mode 100644
+index 0000000..cd1350d
+--- /dev/null
++++ b/6차/src/universe.py
+@@ -0,0 +1,25 @@
++"""공식 운용사 자료로 범위를 정한 모의운용 후보와 정책 기본값입니다."""
++
++import hashlib
++import json
++
++
++SYMBOLS = {
++    "QQQM": "Invesco NASDAQ 100 ETF", "SCHG": "Schwab US Large-Cap Growth ETF",
++    "SPYM": "State Street SPDR Portfolio S&P 500 ETF", "VTI": "Vanguard Total Stock Market ETF",
++    "VEA": "Vanguard FTSE Developed Markets ETF", "VWO": "Vanguard FTSE Emerging Markets ETF",

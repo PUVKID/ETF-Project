@@ -1,0 +1,7 @@
+torch==2.6.0
+chronos-forecasting==2.2.2
+transformers>=4.48,<5
+accelerate>=1.1,<2
+pandas>=2,<3
+yfinance>=0.2.65,<1
+peft>=0.18.1,<1
