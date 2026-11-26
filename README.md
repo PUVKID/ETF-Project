@@ -19,7 +19,7 @@
   <source media="(max-width: 600px)" srcset="assets/readme/flow-ko-light-mobile.svg" />
   <source media="(prefers-color-scheme: dark)" srcset="assets/readme/flow-ko-dark.svg" />
   <source media="(prefers-color-scheme: light)" srcset="assets/readme/flow-ko-light.svg" />
-  <img src="assets/readme/flow-ko-light.svg" alt="ETF Project: ETF 일봉 → Chronos-2 예측 → 전망 · 모의계좌" width="100%" />
+  <img src="assets/readme/flow-ko-light.svg" alt="ETF 일봉: 공개 시장 자료로 ETF 흐름 확인 → Chronos-2 전망: 채택 저장본으로 운영 전망 생성 → 전망 · 모의계좌: 가상 계좌의 ETF 선택·매매 기록" width="100%" />
 </picture>
 <!-- readme-header32:end -->
 

@@ -20,7 +20,7 @@
   <source media="(max-width: 600px)" srcset="../assets/readme/flow-en-light-mobile.svg" />
   <source media="(prefers-color-scheme: dark)" srcset="../assets/readme/flow-en-dark.svg" />
   <source media="(prefers-color-scheme: light)" srcset="../assets/readme/flow-en-light.svg" />
-  <img src="../assets/readme/flow-en-light.svg" alt="ETF Project: Daily ETF bars → Chronos-2 forecasts → Outlook · paper account" width="100%" />
+  <img src="../assets/readme/flow-en-light.svg" alt="Daily ETF bars: ETF trends from public market data → Chronos-2 forecasts: Forecast with the accepted saved model → Outlook · paper account: ETF selection and trades in a paper account" width="100%" />
 </picture>
 <!-- readme-header32:end -->
 
