@@ -1716,18 +1716,19 @@ index 0000000..aeaeb2b
 +}
 \ No newline at end of file
 diff --git a/README.md b/README.md
-index 7e53a01..66c71e7 100644
+index a566333..cb045c2 100644
 --- a/README.md
 +++ b/README.md
-@@ -1,6 +1,6 @@
- # ETF Project
+@@ -24,7 +24,7 @@
+ <!-- readme-header32:end -->
+ 
  
 -**현재 상태:** 6차는 추가 학습 채택 여부와 운영 예측을 분리했습니다. 격리된 기존 코드 검사 87개와 최초 수집 조건을 보완한 영향 검사 5개가 통과했습니다. 새 일봉과 채택 저장본으로 예측하며, 실제 주문은 연결하지 않습니다. 과적합 부재·수익 우위는 입증되지 않았습니다.
 +현재 상태: 7차 화면은 8880에서 제공하며 기존 6차 데이터 서버 8879를 중계합니다. 2026-11-26 인계 확인에서는 8879가 꺼져 API 503을 표시했습니다. 화면 서버 실행과 데이터 운용 재개는 별개이며 이번 변경으로 학습·수집·모의운용을 새로 시작하지 않았습니다.
  
  
  <!-- project-levels:start -->
-@@ -17,6 +17,20 @@
+@@ -41,6 +41,20 @@
  모든 안내는 같은 프로젝트와 전체 차수를 다룹니다. 기존 상세 본문은 아래에 계속 보존합니다.
  <!-- project-levels:end -->
  
@@ -1748,7 +1749,7 @@ index 7e53a01..66c71e7 100644
  ## 6차 운영 예측 분리
  
  추가 학습이 거부되거나 새 학습 날짜가 없을 때도, **마지막으로 채택된 저장 모델이 최신 완결 일봉을 예측**하도록 수정했습니다. 5차의 가중치 보호·학습 예산·고정 검증은 유지합니다.
-@@ -96,6 +110,7 @@
+@@ -120,6 +134,7 @@
  | 4차 | 전체 제공 이력 학습 | [폴더](4차) · [상세](4차/docs/4차%20상세.md) · [직전 비교](4차/docs/4차%20전체%20비교.md) |
  | 5차 | 신규 관측별 학습 방어 | [폴더](5차) · [상세](5차/docs/5차%20상세.md) · [직전 비교](5차/docs/5차%20전체%20비교.md) |
  | 6차 | 운영 예측과 학습 분리 | [폴더](6차) · [상세](6차/docs/6차%20상세.md) · [직전 비교](6차/docs/6차%20전체%20비교.md) |
@@ -1757,10 +1758,10 @@ index 7e53a01..66c71e7 100644
  
  기존 차수는 보존합니다. 최종에는 현재 검증된 실행 파일과 사용 안내만 모으고 코드·이력·운영 자료를 섞지 않습니다. 차수는 소프트웨어 변경 묶음이며 독립 시험 횟수나 투자 성과를 뜻하지 않습니다.
 diff --git a/docs/읽기안내/레벨1.md b/docs/읽기안내/레벨1.md
-index 130fa7f..0d4760a 100644
+index d849dd8..fa21e24 100644
 --- a/docs/읽기안내/레벨1.md
 +++ b/docs/읽기안내/레벨1.md
-@@ -2,9 +2,9 @@
+@@ -6,9 +6,9 @@
  
  | 역할·조건 | 동작과 확인할 내용 |
  | --- | --- |
@@ -1773,7 +1774,7 @@ index 130fa7f..0d4760a 100644
  
  아래 이전 차수 설명은 당시 기록입니다. 현재 동작은 6차에서 확인합니다.
  
-@@ -198,6 +198,7 @@ ETF는 여러 자산에 묶어 투자할 수 있도록 거래소에 상장한 
+@@ -202,6 +202,7 @@ ETF는 여러 자산에 묶어 투자할 수 있도록 거래소에 상장한 
  | 4차 | 전체 제공 이력 | [폴더](../../4차) · [상세](../../4차/docs/4차%20상세.md#user-content-reading-level-1) · [비교](../../4차/docs/4차%20전체%20비교.md) |
  | 5차 | 과적합 위험 방어 | [폴더](../../5차) · [상세](../../5차/docs/5차%20상세.md#user-content-reading-level-1) · [비교](../../5차/docs/5차%20전체%20비교.md) |
  | 6차 | 운영 예측과 학습 분리 | [폴더](../../6차) · [상세](../../6차/docs/6차%20상세.md#reading-level-1) · [비교](../../6차/docs/6차%20전체%20비교.md) |
@@ -1781,7 +1782,7 @@ index 130fa7f..0d4760a 100644
  | 최종 | 3차 실행·안내 유지 | [폴더](../../최종) · [같은 수준](../../최종/사용%20안내.md#user-content-reading-level-1) · [구성](../../3차/docs/최종%20구성.md) |
  
  <a id="level-1--논문원고와-원본-자료의-범위"></a>
-@@ -499,3 +500,17 @@ ETF는 여러 자산에 묶어 투자할 수 있도록 거래소에 상장한 
+@@ -503,3 +504,17 @@ ETF는 여러 자산에 묶어 투자할 수 있도록 거래소에 상장한 
  | 중지·저장본 손상 | 가중치 보호 | 예측 경로도 STOP·SHA-256 확인 |
  
  [6차 같은 수준 상세](../../6차/docs/6차%20상세.md#reading-level-1) · [6차 자료](../../6차/)
@@ -1800,10 +1801,10 @@ index 130fa7f..0d4760a 100644
 +
 +[7차 같은 수준](../../7차/docs/차수설명.md#user-content-reading-level-1) · [사용 안내](../../7차/사용%20안내.md)
 diff --git a/docs/읽기안내/레벨2.md b/docs/읽기안내/레벨2.md
-index 9515744..2a4742c 100644
+index fc73c0c..d6d5069 100644
 --- a/docs/읽기안내/레벨2.md
 +++ b/docs/읽기안내/레벨2.md
-@@ -2,9 +2,9 @@
+@@ -6,9 +6,9 @@
  
  | 역할·조건 | 동작과 확인할 내용 |
  | --- | --- |
@@ -1816,7 +1817,7 @@ index 9515744..2a4742c 100644
  
  아래 이전 차수 설명은 당시 기록입니다. 현재 동작은 6차에서 확인합니다.
  
-@@ -185,6 +185,7 @@ MAE와 MAPE는 예측 오차 지표이며 두 값 중 하나라도 악화되거
+@@ -189,6 +189,7 @@ MAE와 MAPE는 예측 오차 지표이며 두 값 중 하나라도 악화되거
  | 4차 | 전체 제공 이력 | [폴더](../../4차) · [상세](../../4차/docs/4차%20상세.md#user-content-reading-level-2) · [비교](../../4차/docs/4차%20전체%20비교.md) |
  | 5차 | 과적합 위험 방어 | [폴더](../../5차) · [상세](../../5차/docs/5차%20상세.md#user-content-reading-level-2) · [비교](../../5차/docs/5차%20전체%20비교.md) |
  | 6차 | 운영 예측과 학습 분리 | [폴더](../../6차) · [상세](../../6차/docs/6차%20상세.md#reading-level-2) · [비교](../../6차/docs/6차%20전체%20비교.md) |
@@ -1824,7 +1825,7 @@ index 9515744..2a4742c 100644
  | 최종 | 3차 실행·안내 유지 | [폴더](../../최종) · [같은 수준](../../최종/사용%20안내.md#user-content-reading-level-2) · [구성](../../3차/docs/최종%20구성.md) |
  
  <a id="level-2--논문원고와-원본-자료의-범위"></a>
-@@ -480,3 +481,17 @@ MAE와 MAPE는 예측 오차 지표이며 두 값 중 하나라도 악화되거
+@@ -484,3 +485,17 @@ MAE와 MAPE는 예측 오차 지표이며 두 값 중 하나라도 악화되거
  | 중지·저장본 손상 | 가중치 보호 | 예측 경로도 STOP·SHA-256 확인 |
  
  [6차 같은 수준 상세](../../6차/docs/6차%20상세.md#reading-level-2) · [6차 자료](../../6차/)
@@ -1843,10 +1844,10 @@ index 9515744..2a4742c 100644
 +
 +[7차 같은 수준](../../7차/docs/차수설명.md#user-content-reading-level-2) · [사용 안내](../../7차/사용%20안내.md)
 diff --git a/docs/읽기안내/레벨3.md b/docs/읽기안내/레벨3.md
-index 9e90598..67b9988 100644
+index 820b8ef..5d0e8db 100644
 --- a/docs/읽기안내/레벨3.md
 +++ b/docs/읽기안내/레벨3.md
-@@ -2,9 +2,9 @@
+@@ -6,9 +6,9 @@
  
  | 역할·조건 | 동작과 확인할 내용 |
  | --- | --- |
@@ -1859,7 +1860,7 @@ index 9e90598..67b9988 100644
  
  아래 이전 차수 설명은 당시 기록입니다. 현재 동작은 6차에서 확인합니다.
  
-@@ -187,6 +187,7 @@ ETF는 여러 자산에 묶어 투자할 수 있도록 거래소에 상장한 
+@@ -191,6 +191,7 @@ ETF는 여러 자산에 묶어 투자할 수 있도록 거래소에 상장한 
  | 4차 | 전체 제공 이력 | [폴더](../../4차) · [상세](../../4차/docs/4차%20상세.md#user-content-reading-level-3) · [비교](../../4차/docs/4차%20전체%20비교.md) |
  | 5차 | 과적합 위험 방어 | [폴더](../../5차) · [상세](../../5차/docs/5차%20상세.md#user-content-reading-level-3) · [비교](../../5차/docs/5차%20전체%20비교.md) |
  | 6차 | 운영 예측과 학습 분리 | [폴더](../../6차) · [상세](../../6차/docs/6차%20상세.md#reading-level-3) · [비교](../../6차/docs/6차%20전체%20비교.md) |
@@ -1867,7 +1868,7 @@ index 9e90598..67b9988 100644
  | 최종 | 3차 실행·안내 유지 | [폴더](../../최종) · [같은 수준](../../최종/사용%20안내.md#user-content-reading-level-3) · [구성](../../3차/docs/최종%20구성.md) |
  
  <a id="level-3--논문원고와-원본-자료의-범위"></a>
-@@ -474,3 +475,17 @@ PC·프로세스·전원·절전·인터넷 조건을 확인하고 MAPE 원값
+@@ -478,3 +479,17 @@ PC·프로세스·전원·절전·인터넷 조건을 확인하고 MAPE 원값
  | 중지·저장본 손상 | 가중치 보호 | 예측 경로도 STOP·SHA-256 확인 |
  
  [6차 같은 수준 상세](../../6차/docs/6차%20상세.md#reading-level-3) · [6차 자료](../../6차/)
@@ -1886,10 +1887,10 @@ index 9e90598..67b9988 100644
 +
 +[7차 같은 수준](../../7차/docs/차수설명.md#user-content-reading-level-3) · [사용 안내](../../7차/사용%20안내.md)
 diff --git a/docs/읽기안내/레벨4.md b/docs/읽기안내/레벨4.md
-index 5eb1d55..1cd39ac 100644
+index e4e9dba..07705a3 100644
 --- a/docs/읽기안내/레벨4.md
 +++ b/docs/읽기안내/레벨4.md
-@@ -2,9 +2,9 @@
+@@ -6,9 +6,9 @@
  
  | 역할·조건 | 동작과 확인할 내용 |
  | --- | --- |
@@ -1902,7 +1903,7 @@ index 5eb1d55..1cd39ac 100644
  
  아래 이전 차수 설명은 당시 기록입니다. 현재 동작은 6차에서 확인합니다.
  
-@@ -186,6 +186,7 @@ ETF는 여러 자산에 묶어 투자할 수 있도록 거래소에 상장한 
+@@ -190,6 +190,7 @@ ETF는 여러 자산에 묶어 투자할 수 있도록 거래소에 상장한 
  | 4차 | 전체 제공 이력 | [폴더](../../4차) · [상세](../../4차/docs/4차%20상세.md#user-content-reading-level-4) · [비교](../../4차/docs/4차%20전체%20비교.md) |
  | 5차 | 과적합 위험 방어 | [폴더](../../5차) · [상세](../../5차/docs/5차%20상세.md#user-content-reading-level-4) · [비교](../../5차/docs/5차%20전체%20비교.md) |
  | 6차 | 운영 예측과 학습 분리 | [폴더](../../6차) · [상세](../../6차/docs/6차%20상세.md#reading-level-4) · [비교](../../6차/docs/6차%20전체%20비교.md) |
@@ -1910,7 +1911,7 @@ index 5eb1d55..1cd39ac 100644
  | 최종 | 3차 실행·안내 유지 | [폴더](../../최종) · [같은 수준](../../최종/사용%20안내.md#user-content-reading-level-4) · [구성](../../3차/docs/최종%20구성.md) |
  
  <a id="level-4--논문원고와-원본-자료의-범위"></a>
-@@ -485,3 +486,17 @@ ETF는 여러 자산에 묶어 투자할 수 있도록 거래소에 상장한 
+@@ -489,3 +490,17 @@ ETF는 여러 자산에 묶어 투자할 수 있도록 거래소에 상장한 
  | 중지·저장본 손상 | 가중치 보호 | 예측 경로도 STOP·SHA-256 확인 |
  
  [6차 같은 수준 상세](../../6차/docs/6차%20상세.md#reading-level-4) · [6차 자료](../../6차/)
@@ -1929,10 +1930,10 @@ index 5eb1d55..1cd39ac 100644
 +
 +[7차 같은 수준](../../7차/docs/차수설명.md#user-content-reading-level-4) · [사용 안내](../../7차/사용%20안내.md)
 diff --git a/docs/읽기안내/레벨5.md b/docs/읽기안내/레벨5.md
-index 4a7bd99..abb6b5d 100644
+index 555192c..3110b44 100644
 --- a/docs/읽기안내/레벨5.md
 +++ b/docs/읽기안내/레벨5.md
-@@ -2,9 +2,9 @@
+@@ -6,9 +6,9 @@
  
  | 역할·조건 | 동작과 확인할 내용 |
  | --- | --- |
@@ -1945,7 +1946,7 @@ index 4a7bd99..abb6b5d 100644
  
  아래 이전 차수 설명은 당시 기록입니다. 현재 동작은 6차에서 확인합니다.
  
-@@ -191,6 +191,7 @@ ETF는 여러 자산에 묶어 투자할 수 있도록 거래소에 상장한 
+@@ -195,6 +195,7 @@ ETF는 여러 자산에 묶어 투자할 수 있도록 거래소에 상장한 
  | 4차 | 전체 제공 이력 | [폴더](../../4차) · [상세](../../4차/docs/4차%20상세.md#user-content-reading-level-5) · [비교](../../4차/docs/4차%20전체%20비교.md) |
  | 5차 | 과적합 위험 방어 | [폴더](../../5차) · [상세](../../5차/docs/5차%20상세.md#user-content-reading-level-5) · [비교](../../5차/docs/5차%20전체%20비교.md) |
  | 6차 | 운영 예측과 학습 분리 | [폴더](../../6차) · [상세](../../6차/docs/6차%20상세.md#reading-level-5) · [비교](../../6차/docs/6차%20전체%20비교.md) |
@@ -1953,7 +1954,7 @@ index 4a7bd99..abb6b5d 100644
  | 최종 | 3차 실행·안내 유지 | [폴더](../../최종) · [같은 수준](../../최종/사용%20안내.md#user-content-reading-level-5) · [구성](../../3차/docs/최종%20구성.md) |
  
  <a id="level-5--논문원고와-원본-자료의-범위"></a>
-@@ -490,3 +491,17 @@ refresh_live_forecasts → _publish_saved_forecasts → publish_forecasts를 run
+@@ -494,3 +495,17 @@ refresh_live_forecasts → _publish_saved_forecasts → publish_forecasts를 run
  | 중지·저장본 손상 | 가중치 보호 | 예측 경로도 STOP·SHA-256 확인 |
  
  [6차 같은 수준 상세](../../6차/docs/6차%20상세.md#reading-level-5) · [6차 자료](../../6차/)
@@ -1971,3 +1972,376 @@ index 4a7bd99..abb6b5d 100644
 +| 연결 실패 | 기존 서버 경계 | 503 경고 표시, 정상 데이터로 가장하지 않음 |
 +
 +[7차 같은 수준](../../7차/docs/차수설명.md#user-content-reading-level-5) · [사용 안내](../../7차/사용%20안내.md)
+diff --git a/en/README.md b/en/README.md
+index 3cac378..47630bb 100644
+--- a/en/README.md
++++ b/en/README.md
+@@ -1,177 +1,191 @@
+-<a id="etf-project"></a>
+-<!-- readme-header32:start -->
+-<p align="center"><img src="../assets/readme/icon.svg" alt="" width="72" height="72" /></p>
+-<h1 align="center" id="project-title">ETF Project</h1>
+-<p align="center">ETF forecasts and paper-account records</p>
+-<p align="center">
+-  <a href="../README.md"><img src="../assets/readme/language-ko-link.svg" alt="한국어" width="126" height="32" /></a>
+-  <a href="README.md"><img src="../assets/readme/language-en-active.svg" alt="English · current language" width="126" height="32" /></a>
+-</p>
+-<p align="center">
+-  <a href="../docs/읽기안내/레벨1.md"><img src="../assets/readme/level-1.svg" alt="LEVEL 1 - Beginner (Korean source)" width="92" height="32" /></a>
+-  <a href="../docs/읽기안내/레벨2.md"><img src="../assets/readme/level-2.svg" alt="LEVEL 2 - Explorer (Korean source)" width="92" height="32" /></a>
+-  <a href="../docs/읽기안내/레벨3.md"><img src="../assets/readme/level-3.svg" alt="LEVEL 3 - Practitioner (Korean source)" width="92" height="32" /></a>
+-  <a href="../docs/읽기안내/레벨4.md"><img src="../assets/readme/level-4.svg" alt="LEVEL 4 - Advanced (Korean source)" width="92" height="32" /></a>
+-  <a href="../docs/읽기안내/레벨5.md"><img src="../assets/readme/level-5.svg" alt="LEVEL 5 - Expert (Korean source)" width="92" height="32" /></a>
+-</p>
+-<p align="center"><small>LEVEL links open the Korean source at the same reading level.</small></p>
+-<picture>
+-  <source media="(max-width: 600px) and (prefers-color-scheme: dark)" srcset="../assets/readme/flow-en-dark-mobile.svg" />
+-  <source media="(max-width: 600px)" srcset="../assets/readme/flow-en-light-mobile.svg" />
+-  <source media="(prefers-color-scheme: dark)" srcset="../assets/readme/flow-en-dark.svg" />
+-  <source media="(prefers-color-scheme: light)" srcset="../assets/readme/flow-en-light.svg" />
+-  <img src="../assets/readme/flow-en-light.svg" alt="ETF Project: Daily ETF bars → Chronos-2 forecasts → Outlook · paper account" width="100%" />
+-</picture>
+-<!-- readme-header32:end -->
+-
+-
+-**Current status:** Revision 6 separates the decision to accept additional training from operational forecasting. The 87 isolated existing code checks and 5 impact checks covering the first-collection condition passed. Forecasts use new daily bars and the accepted saved model; real orders are not connected. The absence of overfitting and superior investment returns have not been demonstrated.
+-
+-<!-- project-levels:start -->
+-<a id="읽는-수준-선택"></a>
+-## Choose a reading level
+-
+-| Level | What this guide covers |
+-| --- | --- |
+-| [LEVEL 1 - Beginner (Korean source)](../docs/읽기안내/레벨1.md) | Plain explanations of unfamiliar terms, actual behavior, examples, and boundaries that can be misunderstood. |
+-| [LEVEL 2 - Explorer (Korean source)](../docs/읽기안내/레벨2.md) | Connections between inputs, processing, outputs, and features, and changes across revisions. |
+-| [LEVEL 3 - Practitioner (Korean source)](../docs/읽기안내/레벨3.md) | Prerequisites, usage steps, settings, results, and how to identify failures. |
+-| [LEVEL 4 - Advanced (Korean source)](../docs/읽기안내/레벨4.md) | Module design, state transitions, validation boundaries, and implementation choices. |
+-| [LEVEL 5 - Expert (Korean source)](../docs/읽기안내/레벨5.md) | Actual code, protocols, configuration values, full comparisons, and measurement evidence. |
+-
+-Every guide covers the same project and all revisions. The existing detailed text remains below.
+-<!-- project-levels:end -->
+-
+-<a id="6차-운영-예측-분리"></a>
+-## Revision 6: separating operational forecasting
+-
+-The behavior was changed so that **the last accepted saved model forecasts the latest completed daily bars**, even when additional training is rejected or no new training date is available. Revision 5's weight protection, training budget, and fixed validation remain in place.
+-
+-| Process | Revision 5 behavior | Revision 6 behavior |
+-| --- | --- | --- |
+-| Additional training rejected | Also skip publishing a new forecast | Run operational forecasting with the accepted saved model before training |
+-| No new training date | Continue only collection and existing-order processing | Forecast with the accepted saved model when the forecast input is new |
+-| Rechecking the same input | Do not schedule a new training round | Skip reloading the model when the saved-model, context, and data hashes match |
+-| First collection in continuous operation | May skip collection when PC uptime is shorter than the collection interval | Collect on the first loop, then apply the 6-hour interval |
+-| Stop or damaged saved model | Protect weights | Check STOP and SHA-256 on the forecasting path as well |
+-
+-[Full revision index (Korean source)](../6차/docs/REVISION_INDEX.md) · [Revision 6 details (Korean source)](../6차/docs/6차%20상세.md) · [Full comparison (Korean source)](../6차/docs/6차%20전체%20비교.md)
+-
+-<a id="5차-당시-준비-기록"></a>
+-## Preparation record from revision 5
+-
+-[Full revision index including revision 5 (Korean source)](../5차/docs/REVISION_INDEX.md) · [Revision 5 details (Korean source)](../5차/docs/5차%20상세.md)
+-
+-Revision 5 implemented limited training per new observation and validation before saving. Switching the running system to revision 5 was not completed, and GPU-based additional training, independent future performance, and complete prevention of overfitting were not demonstrated. The revision 4 documents and records below are retained as the previous state.
+-
+-| Condition | Revision 5 protection design |
+-| --- | --- |
+-| Training timing | Once initially, then when a new eligible observation date becomes available |
+-| Preventing repetition | Persist the reservation before training to prevent repeatedly scheduling or restarting a new round using only the same observation set |
+-| Training settings | Maximum 25 steps, learning rate 0.000001, weight decay 0.01, gradient clipping 1.0 |
+-| Checks before saving | Allow zero deterioration in before/after MAE and MAPE on fixed validation data for the first three ETFs; check finite values and sample counts |
+-| Deterioration, STOP, or error before publication | Keep the existing operational pointer; prohibit publishing order forecasts from the new weights |
+-| No new observation | Wait for training; continue data collection and paper operation |
+-
+-A new date is a condition permitting a new round. An allowed round reuses the entire permitted training dataset, so historical rows can also be sampled again. Sampling is random; there is no guarantee that every new row is trained on in every round.
+-
+-STOP is checked immediately before publication, but complete atomicity across processes between a separate STOP file and the pointer is not guaranteed. If reporting or ledger recording fails after validation and atomic pointer publication have finished, the already published validated weights remain in place. Atomic saving of the reservation file alone does not prevent concurrent contention; a single-worker lock is the operational boundary.
+-
+-This design **protects additional training of the same Chronos-2 model**; it does not select a winner by competing different models.
+-
+-Repeatedly checking fixed validation data leaves a risk of adapting to that validation dataset.
+-
+-The three-ETF criterion does not demonstrate independent performance across all 15 ETFs and the exchange rate.
+-
+-Forward evaluation remains separate.
+-
+-Neither complete prevention of overfitting, automatic repair of an already overfitted model, nor investment returns are guaranteed.
+-
+-<a id="기존-공개-안내"></a>
+-## Existing public guide
+-
+-<a name="-etf-project"></a>
+-
+-The revision 4–5 descriptions below record their state when they were written. Follow the revision 6 guide above for current operation.
+-<a id="이전-4차-프로젝트-기록"></a>
+-## Earlier revision 4 project record
+-
+-This is a local training and paper-operation tool for a long-term investment plan of at least 10 years. It continually trains the latest weights of one pretrained time-series model, Chronos-2, and automatically selects and trades ETFs in a virtual account that converts KRW 1,000,000 into US dollars. Actual holdings and a Toss account are not connected.
+-
+-**Technical areas:** time-series forecasting · additional training · long-term paper investing · local dashboard
+-
+-[Data and fill boundaries (Korean source)](../3차/docs/자료와%20모의체결%20범위.md) · [All revisions (Korean source)](../4차/docs/REVISION_INDEX.md) · [Change log (Korean source)](../4차/변경기록.md)
+-
+-<a name="️-실행"></a>
+-<a id="실행"></a>
+-## Running the tool
+-
+-The revision 5 preparation build was configured to use the dedicated revision 1 environment and private storage. Switching operation to revision 5 was not completed. Public code does not include model weights or the runtime environment.
+-
+-- If the server is running, open the [dashboard](http://127.0.0.1:8879/).
+-- If the server is stopped, run `대시보드 실행.cmd` in the project's final-delivery folder.
+-- See the [user guide (Korean source)](../4차/사용%20안내.md) for stop/resume behavior and the scope of cost reproduction.
+-
+-<a name="️-전체-차수"></a>
+-<a id="전체-차수"></a>
+-## All revisions
+-
+-| Revision | Main change | Materials |
+-| --- | --- | --- |
+-| 1 | Initial training and evaluation | [Folder (Korean source)](../1차) · [Details (Korean source)](../1차/docs/1차%20상세.md) · [Initially added files (Korean source)](../1차/docs/1차%20전체%20비교.md) |
+-| 2 | Numeric display and controls | [Folder (Korean source)](../2차) · [Details (Korean source)](../2차/docs/2차%20상세.md) · [Comparison with previous revision (Korean source)](../2차/docs/2차%20전체%20비교.md) |
+-| 3 | Holdings and automated trading | [Folder (Korean source)](../3차) · [Details (Korean source)](../3차/docs/3차%20상세.md) · [Comparison with previous revision (Korean source)](../3차/docs/3차%20전체%20비교.md) |
+-| 4 | Training on all available history | [Folder (Korean source)](../4차) · [Details (Korean source)](../4차/docs/4차%20상세.md) · [Comparison with previous revision (Korean source)](../4차/docs/4차%20전체%20비교.md) |
+-| 5 | Training protection per new observation | [Folder (Korean source)](../5차) · [Details (Korean source)](../5차/docs/5차%20상세.md) · [Comparison with previous revision (Korean source)](../5차/docs/5차%20전체%20비교.md) |
+-| 6 | Separating operational forecasting and training | [Folder (Korean source)](../6차) · [Details (Korean source)](../6차/docs/6차%20상세.md) · [Comparison with previous revision (Korean source)](../6차/docs/6차%20전체%20비교.md) |
+-| Final | Runtime and guidance | [Folder (Korean source)](../최종) · [User guide (Korean source)](../최종/사용%20안내.md) · [Contents (Korean source)](../3차/docs/최종%20구성.md) |
+-
+-Existing revisions are preserved. The final-delivery folder contains only the currently verified launch files and user guide, without mixing in code, historical files, or operational materials. Revisions are software change bundles; they do not represent independent test counts or investment performance.
+-
+-<a name="-보유와-거래"></a>
+-<a id="보유와-거래"></a>
+-## Holdings and trading
+-
+-The screen shows current ETF holdings, quantities, average purchase prices, KRW acquisition costs and valuations, and unrealized gains or losses. Pending orders and fills are separate. Buy/sell filters and pagination provide access to the entire fill history. Currency conversion has its own records. There may be zero trades before a new observation is obtained.
+-
+-The candidates are QQQM, SCHG, SPYM, VTI, VEA, VWO, BND, IEF, TLT, SGOV, GLD, XLK, XLF, XLV, and XLE. Selection is automatic under model forecasts, cost constraints, and available cash. This is not a validated list of every ETF or every instrument supported by Toss. Borrowing, short selling, and leveraged ETFs are not used.
+-
+-Completed daily bars for training are distinct from completed regular-session one-minute bars used for fills. A paper fill requires a bar that began after the order, belongs to the current regular session, and meets the maximum 20-minute delay condition. Historical, after-hours, future, and stale observations are not converted into fills. Missing free data is shown as waiting. One-second screen-status updates do not mean second-by-second real-time market prices.
+-
+-<a name="-이어-학습과-성과-해석"></a>
+-<a id="이어-학습과-성과-해석"></a>
+-## Continued training and interpreting performance
+-
+-The same latest weights of `amazon/chronos-2` are continually updated.
+-
+-Models are not competed or selected anew for each round.
+-
+-The original and adjusted fixed-evaluation values for the first three ETFs are preserved first. Revision 4 requests all obtainable daily bars for 15 ETFs and KRW=X, and trains dates on or before 2024-06-03 and after 2026-11-06 as separate time series.
+-
+-Validation dates 2024-06-04–2025-08-21 and test dates 2025-08-22–2026-11-06 are excluded from training for every asset.
+-
+-The exchange rate is an independent univariate series, not an ETF covariate or causal-learning input.
+-
+-Additional training after the test period is not independent test performance.
+-
+-The actual available history and training eligibility of short segments must be checked from execution results.
+-
+-Training for about two months is an operational plan. Repetition occurs while the PC and local process are running and is affected by power, sleep, internet connectivity, and process interruption. Repeated sampling counts are distinct from the number of independent original observations.
+-
+-In the initial 20-step test, the raw MAPE was about 0.7643% for additional training and about 0.7550% for a no-change forecast; both round to 0.8% in the summary. This did not demonstrate superior investment returns.
+-
+-Historical paper comparisons, forward records accumulated during operation, and assumed-return scenarios are different. The asset-specific and time-specific boundaries of pretraining data have not been established. Ten years is the planned duration; a short ETF history is not presented as 10 years of measured performance. Returns, preservation of principal, and real-trading performance are not guaranteed.
+-
+-<a name="-수치와-원값"></a>
+-<a id="수치와-원값"></a>
+-## Numbers and raw values
+-
+-Percentage summaries round to one decimal place; the stored raw ratios and full precision can be expanded for inspection. A rounded 100.0% is distinct from every answer actually being correct. Raw-value snapshots are refreshed explicitly, and original results are not changed for display purposes. Earlier display methods from revisions 1 and 2 remain in the historical documents.
+-
+-<a name="-비용과-공개-범위"></a>
+-<a id="비용과-공개-범위"></a>
+-## Costs and publication boundaries
+-
+-The tool incorporates Toss's base trading fee of 0.1% and the public default assumptions for currency-conversion and SEC costs. These are not identical to all actual tradable instruments, quotes, settlement, dividend-payment dates, exchange rates, or taxes. Actual Toss orders are not sent. Raw market data, weights, paper ledgers, credentials, personal instructions, and operational records are excluded from publication.
+-
+-This software project has no paper or manuscript. Unit, display, and API-boundary checks and a separate review are performed. Publication is checked through the current remote commit, complete tree, key raw HTTP files, and revision links. Historical failures and unverified UI areas remain in separate local records.
++<a id="etf-project"></a>
++<!-- readme-header32:start -->
++<p align="center"><img src="../assets/readme/icon.svg" alt="" width="72" height="72" /></p>
++<h1 align="center" id="project-title">ETF Project</h1>
++<p align="center">ETF forecasts and paper-account records</p>
++<p align="center">
++  <a href="../README.md"><img src="../assets/readme/language-ko-link.svg" alt="한국어" width="126" height="32" /></a>
++  <a href="README.md"><img src="../assets/readme/language-en-active.svg" alt="English · current language" width="126" height="32" /></a>
++</p>
++<p align="center">
++  <a href="../docs/읽기안내/레벨1.md"><img src="../assets/readme/level-1.svg" alt="LEVEL 1 - Beginner (Korean source)" width="92" height="32" /></a>
++  <a href="../docs/읽기안내/레벨2.md"><img src="../assets/readme/level-2.svg" alt="LEVEL 2 - Explorer (Korean source)" width="92" height="32" /></a>
++  <a href="../docs/읽기안내/레벨3.md"><img src="../assets/readme/level-3.svg" alt="LEVEL 3 - Practitioner (Korean source)" width="92" height="32" /></a>
++  <a href="../docs/읽기안내/레벨4.md"><img src="../assets/readme/level-4.svg" alt="LEVEL 4 - Advanced (Korean source)" width="92" height="32" /></a>
++  <a href="../docs/읽기안내/레벨5.md"><img src="../assets/readme/level-5.svg" alt="LEVEL 5 - Expert (Korean source)" width="92" height="32" /></a>
++</p>
++<p align="center"><small>LEVEL links open the Korean source at the same reading level.</small></p>
++<picture>
++  <source media="(max-width: 600px) and (prefers-color-scheme: dark)" srcset="../assets/readme/flow-en-dark-mobile.svg" />
++  <source media="(max-width: 600px)" srcset="../assets/readme/flow-en-light-mobile.svg" />
++  <source media="(prefers-color-scheme: dark)" srcset="../assets/readme/flow-en-dark.svg" />
++  <source media="(prefers-color-scheme: light)" srcset="../assets/readme/flow-en-light.svg" />
++  <img src="../assets/readme/flow-en-light.svg" alt="ETF Project: Daily ETF bars → Chronos-2 forecasts → Outlook · paper account" width="100%" />
++</picture>
++<!-- readme-header32:end -->
++
++
++**Current status:** Revision 7 provides a separate Astryx dashboard at port 8880 and relays the existing revision 6 data server at port 8879. At the 2026-11-26 handoff, the upstream server was unavailable and the screen correctly showed HTTP 503. Starting this screen does not restart training, collection, or paper trading.
++
++<!-- project-levels:start -->
++<a id="읽는-수준-선택"></a>
++## Choose a reading level
++
++| Level | What this guide covers |
++| --- | --- |
++| [LEVEL 1 - Beginner (Korean source)](../docs/읽기안내/레벨1.md) | Plain explanations of unfamiliar terms, actual behavior, examples, and boundaries that can be misunderstood. |
++| [LEVEL 2 - Explorer (Korean source)](../docs/읽기안내/레벨2.md) | Connections between inputs, processing, outputs, and features, and changes across revisions. |
++| [LEVEL 3 - Practitioner (Korean source)](../docs/읽기안내/레벨3.md) | Prerequisites, usage steps, settings, results, and how to identify failures. |
++| [LEVEL 4 - Advanced (Korean source)](../docs/읽기안내/레벨4.md) | Module design, state transitions, validation boundaries, and implementation choices. |
++| [LEVEL 5 - Expert (Korean source)](../docs/읽기안내/레벨5.md) | Actual code, protocols, configuration values, full comparisons, and measurement evidence. |
++
++Every guide covers the same project and all revisions. The existing detailed text remains below.
++<!-- project-levels:end -->
++
++## Revision 7: Astryx dashboard and Rust-generated themes
++
++The original palette, NanumGothic 700, controls, and data logic are preserved. The screen uses official Astryx neutral CSS, two themes generated by the Rust tool at build time, and a selector adapter. Existing independent evidence covers 44px controls, both themes, 390/1440px layouts, hover, and real Tab focus. These UI checks do not demonstrate forecasting accuracy, investment returns, or GPU acceleration.
++
++| Boundary | Revision 7 behavior |
++| --- | --- |
++| Screen | Separate local server at 8880; generated CSS is included |
++| Data and controls | Relay the existing 8879 API; no new account or worker |
++| Current connection | HTTP 503 while upstream is unavailable; no automatic engine restart |
++| Rebuilding themes | Included Rust Cargo source; the original E shared-engine and npm 0.7.17 dependencies are documented in the Korean reproduction guide |
++
++[Revision 7 details (Korean source)](../7차/docs/차수설명.md) · [Usage and reproduction (Korean source)](../7차/사용%20안내.md) · [All revisions](../7차/docs/REVISION_INDEX.md) · [Full comparison](../7차/docs/7차%20전체%20비교.md)
++
++<a id="6차-운영-예측-분리"></a>
++## Revision 6: separating operational forecasting
++
++The behavior was changed so that **the last accepted saved model forecasts the latest completed daily bars**, even when additional training is rejected or no new training date is available. Revision 5's weight protection, training budget, and fixed validation remain in place.
++
++| Process | Revision 5 behavior | Revision 6 behavior |
++| --- | --- | --- |
++| Additional training rejected | Also skip publishing a new forecast | Run operational forecasting with the accepted saved model before training |
++| No new training date | Continue only collection and existing-order processing | Forecast with the accepted saved model when the forecast input is new |
++| Rechecking the same input | Do not schedule a new training round | Skip reloading the model when the saved-model, context, and data hashes match |
++| First collection in continuous operation | May skip collection when PC uptime is shorter than the collection interval | Collect on the first loop, then apply the 6-hour interval |
++| Stop or damaged saved model | Protect weights | Check STOP and SHA-256 on the forecasting path as well |
++
++[Full revision index (Korean source)](../6차/docs/REVISION_INDEX.md) · [Revision 6 details (Korean source)](../6차/docs/6차%20상세.md) · [Full comparison (Korean source)](../6차/docs/6차%20전체%20비교.md)
++
++<a id="5차-당시-준비-기록"></a>
++## Preparation record from revision 5
++
++[Full revision index including revision 5 (Korean source)](../5차/docs/REVISION_INDEX.md) · [Revision 5 details (Korean source)](../5차/docs/5차%20상세.md)
++
++Revision 5 implemented limited training per new observation and validation before saving. Switching the running system to revision 5 was not completed, and GPU-based additional training, independent future performance, and complete prevention of overfitting were not demonstrated. The revision 4 documents and records below are retained as the previous state.
++
++| Condition | Revision 5 protection design |
++| --- | --- |
++| Training timing | Once initially, then when a new eligible observation date becomes available |
++| Preventing repetition | Persist the reservation before training to prevent repeatedly scheduling or restarting a new round using only the same observation set |
++| Training settings | Maximum 25 steps, learning rate 0.000001, weight decay 0.01, gradient clipping 1.0 |
++| Checks before saving | Allow zero deterioration in before/after MAE and MAPE on fixed validation data for the first three ETFs; check finite values and sample counts |
++| Deterioration, STOP, or error before publication | Keep the existing operational pointer; prohibit publishing order forecasts from the new weights |
++| No new observation | Wait for training; continue data collection and paper operation |
++
++A new date is a condition permitting a new round. An allowed round reuses the entire permitted training dataset, so historical rows can also be sampled again. Sampling is random; there is no guarantee that every new row is trained on in every round.
++
++STOP is checked immediately before publication, but complete atomicity across processes between a separate STOP file and the pointer is not guaranteed. If reporting or ledger recording fails after validation and atomic pointer publication have finished, the already published validated weights remain in place. Atomic saving of the reservation file alone does not prevent concurrent contention; a single-worker lock is the operational boundary.
++
++This design **protects additional training of the same Chronos-2 model**; it does not select a winner by competing different models.
++
++Repeatedly checking fixed validation data leaves a risk of adapting to that validation dataset.
++
++The three-ETF criterion does not demonstrate independent performance across all 15 ETFs and the exchange rate.
++
++Forward evaluation remains separate.
++
++Neither complete prevention of overfitting, automatic repair of an already overfitted model, nor investment returns are guaranteed.
++
++<a id="기존-공개-안내"></a>
++## Existing public guide
++
++<a name="-etf-project"></a>
++
++The revision 4–5 descriptions below record their state when they were written. Follow the revision 6 guide above for current operation.
++<a id="이전-4차-프로젝트-기록"></a>
++## Earlier revision 4 project record
++
++This is a local training and paper-operation tool for a long-term investment plan of at least 10 years. It continually trains the latest weights of one pretrained time-series model, Chronos-2, and automatically selects and trades ETFs in a virtual account that converts KRW 1,000,000 into US dollars. Actual holdings and a Toss account are not connected.
++
++**Technical areas:** time-series forecasting · additional training · long-term paper investing · local dashboard
++
++[Data and fill boundaries (Korean source)](../3차/docs/자료와%20모의체결%20범위.md) · [All revisions (Korean source)](../4차/docs/REVISION_INDEX.md) · [Change log (Korean source)](../4차/변경기록.md)
++
++<a name="️-실행"></a>
++<a id="실행"></a>
++## Running the tool
++
++The revision 5 preparation build was configured to use the dedicated revision 1 environment and private storage. Switching operation to revision 5 was not completed. Public code does not include model weights or the runtime environment.
++
++- If the server is running, open the [dashboard](http://127.0.0.1:8879/).
++- If the server is stopped, run `대시보드 실행.cmd` in the project's final-delivery folder.
++- See the [user guide (Korean source)](../4차/사용%20안내.md) for stop/resume behavior and the scope of cost reproduction.
++
++<a name="️-전체-차수"></a>
++<a id="전체-차수"></a>
++## All revisions
++
++| Revision | Main change | Materials |
++| --- | --- | --- |
++| 1 | Initial training and evaluation | [Folder (Korean source)](../1차) · [Details (Korean source)](../1차/docs/1차%20상세.md) · [Initially added files (Korean source)](../1차/docs/1차%20전체%20비교.md) |
++| 2 | Numeric display and controls | [Folder (Korean source)](../2차) · [Details (Korean source)](../2차/docs/2차%20상세.md) · [Comparison with previous revision (Korean source)](../2차/docs/2차%20전체%20비교.md) |
++| 3 | Holdings and automated trading | [Folder (Korean source)](../3차) · [Details (Korean source)](../3차/docs/3차%20상세.md) · [Comparison with previous revision (Korean source)](../3차/docs/3차%20전체%20비교.md) |
++| 4 | Training on all available history | [Folder (Korean source)](../4차) · [Details (Korean source)](../4차/docs/4차%20상세.md) · [Comparison with previous revision (Korean source)](../4차/docs/4차%20전체%20비교.md) |
++| 5 | Training protection per new observation | [Folder (Korean source)](../5차) · [Details (Korean source)](../5차/docs/5차%20상세.md) · [Comparison with previous revision (Korean source)](../5차/docs/5차%20전체%20비교.md) |
++| 6 | Separating operational forecasting and training | [Folder (Korean source)](../6차) · [Details (Korean source)](../6차/docs/6차%20상세.md) · [Comparison with previous revision (Korean source)](../6차/docs/6차%20전체%20비교.md) |
++| 7 | Astryx dashboard and Rust-generated themes | [Folder (Korean source)](../7차) · [Details (Korean source)](../7차/docs/차수설명.md) · [Comparison with previous revision (Korean source)](../7차/docs/7차%20전체%20비교.md) |
++| Final | Runtime and guidance | [Folder (Korean source)](../최종) · [User guide (Korean source)](../최종/사용%20안내.md) · [Contents (Korean source)](../3차/docs/최종%20구성.md) |
++
++Existing revisions are preserved. The final-delivery folder contains only the currently verified launch files and user guide, without mixing in code, historical files, or operational materials. Revisions are software change bundles; they do not represent independent test counts or investment performance.
++
++<a name="-보유와-거래"></a>
++<a id="보유와-거래"></a>
++## Holdings and trading
++
++The screen shows current ETF holdings, quantities, average purchase prices, KRW acquisition costs and valuations, and unrealized gains or losses. Pending orders and fills are separate. Buy/sell filters and pagination provide access to the entire fill history. Currency conversion has its own records. There may be zero trades before a new observation is obtained.
++
++The candidates are QQQM, SCHG, SPYM, VTI, VEA, VWO, BND, IEF, TLT, SGOV, GLD, XLK, XLF, XLV, and XLE. Selection is automatic under model forecasts, cost constraints, and available cash. This is not a validated list of every ETF or every instrument supported by Toss. Borrowing, short selling, and leveraged ETFs are not used.
++
++Completed daily bars for training are distinct from completed regular-session one-minute bars used for fills. A paper fill requires a bar that began after the order, belongs to the current regular session, and meets the maximum 20-minute delay condition. Historical, after-hours, future, and stale observations are not converted into fills. Missing free data is shown as waiting. One-second screen-status updates do not mean second-by-second real-time market prices.
++
++<a name="-이어-학습과-성과-해석"></a>
++<a id="이어-학습과-성과-해석"></a>
++## Continued training and interpreting performance
++
++The same latest weights of `amazon/chronos-2` are continually updated.
++
++Models are not competed or selected anew for each round.
++
++The original and adjusted fixed-evaluation values for the first three ETFs are preserved first. Revision 4 requests all obtainable daily bars for 15 ETFs and KRW=X, and trains dates on or before 2024-06-03 and after 2026-11-06 as separate time series.
++
++Validation dates 2024-06-04–2025-08-21 and test dates 2025-08-22–2026-11-06 are excluded from training for every asset.
++
++The exchange rate is an independent univariate series, not an ETF covariate or causal-learning input.
++
++Additional training after the test period is not independent test performance.
++
++The actual available history and training eligibility of short segments must be checked from execution results.
++
++Training for about two months is an operational plan. Repetition occurs while the PC and local process are running and is affected by power, sleep, internet connectivity, and process interruption. Repeated sampling counts are distinct from the number of independent original observations.
++
++In the initial 20-step test, the raw MAPE was about 0.7643% for additional training and about 0.7550% for a no-change forecast; both round to 0.8% in the summary. This did not demonstrate superior investment returns.
++
++Historical paper comparisons, forward records accumulated during operation, and assumed-return scenarios are different. The asset-specific and time-specific boundaries of pretraining data have not been established. Ten years is the planned duration; a short ETF history is not presented as 10 years of measured performance. Returns, preservation of principal, and real-trading performance are not guaranteed.
++
++<a name="-수치와-원값"></a>
++<a id="수치와-원값"></a>
++## Numbers and raw values
++
++Percentage summaries round to one decimal place; the stored raw ratios and full precision can be expanded for inspection. A rounded 100.0% is distinct from every answer actually being correct. Raw-value snapshots are refreshed explicitly, and original results are not changed for display purposes. Earlier display methods from revisions 1 and 2 remain in the historical documents.
++
++<a name="-비용과-공개-범위"></a>
++<a id="비용과-공개-범위"></a>
++## Costs and publication boundaries
++
++The tool incorporates Toss's base trading fee of 0.1% and the public default assumptions for currency-conversion and SEC costs. These are not identical to all actual tradable instruments, quotes, settlement, dividend-payment dates, exchange rates, or taxes. Actual Toss orders are not sent. Raw market data, weights, paper ledgers, credentials, personal instructions, and operational records are excluded from publication.
++
++This software project has no paper or manuscript. Unit, display, and API-boundary checks and a separate review are performed. Publication is checked through the current remote commit, complete tree, key raw HTTP files, and revision links. Historical failures and unverified UI areas remain in separate local records.

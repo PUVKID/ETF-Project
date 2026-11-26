@@ -1,3 +1,7 @@
+<!-- language-choice:start -->
+🔵 **한국어** · [English overview](../en/README.md)
+<!-- language-choice:end -->
+
 <a name="-관측값을-그대로-확인하는-장기투자-대시보드"></a>
 # 관측값을 확인하는 장기투자 대시보드
 

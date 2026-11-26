@@ -1,3 +1,7 @@
+<!-- language-choice:start -->
+🔵 **한국어** · [English overview](../en/README.md)
+<!-- language-choice:end -->
+
 <a name="-3차--보유-내역과-자동-모의매매"></a>
 # 3차·보유 내역과 자동 모의 매매
 
