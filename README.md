@@ -1,4 +1,28 @@
-# ETF Project
+<!-- readme-header32:start -->
+<a name="etf-project"></a>
+<p align="center"><img src="assets/readme/icon.svg" alt="" width="72" height="72" /></p>
+<h1 align="center" id="project-title">ETF Project</h1>
+<p align="center">ETF 예측과 모의계좌 기록</p>
+<p align="center">
+  <a href="README.md"><img src="assets/readme/language-ko-active.svg" alt="한국어 · 현재 언어" width="126" height="32" /></a>
+  <a href="en/README.md"><img src="assets/readme/language-en-link.svg" alt="English" width="126" height="32" /></a>
+</p>
+<p align="center">
+  <a href="docs/읽기안내/레벨1.md"><img src="assets/readme/level-1.svg" alt="LEVEL 1 - Beginner" width="92" height="32" /></a>
+  <a href="docs/읽기안내/레벨2.md"><img src="assets/readme/level-2.svg" alt="LEVEL 2 - Explorer" width="92" height="32" /></a>
+  <a href="docs/읽기안내/레벨3.md"><img src="assets/readme/level-3.svg" alt="LEVEL 3 - Practitioner" width="92" height="32" /></a>
+  <a href="docs/읽기안내/레벨4.md"><img src="assets/readme/level-4.svg" alt="LEVEL 4 - Advanced" width="92" height="32" /></a>
+  <a href="docs/읽기안내/레벨5.md"><img src="assets/readme/level-5.svg" alt="LEVEL 5 - Expert" width="92" height="32" /></a>
+</p>
+<picture>
+  <source media="(max-width: 600px) and (prefers-color-scheme: dark)" srcset="assets/readme/flow-ko-dark-mobile.svg" />
+  <source media="(max-width: 600px)" srcset="assets/readme/flow-ko-light-mobile.svg" />
+  <source media="(prefers-color-scheme: dark)" srcset="assets/readme/flow-ko-dark.svg" />
+  <source media="(prefers-color-scheme: light)" srcset="assets/readme/flow-ko-light.svg" />
+  <img src="assets/readme/flow-ko-light.svg" alt="ETF Project: ETF 일봉 → Chronos-2 예측 → 전망 · 모의계좌" width="100%" />
+</picture>
+<!-- readme-header32:end -->
+
 
 **현재 상태:** 6차는 추가 학습 채택 여부와 운영 예측을 분리했습니다. 격리된 기존 코드 검사 87개와 최초 수집 조건을 보완한 영향 검사 5개가 통과했습니다. 새 일봉과 채택 저장본으로 예측하며, 실제 주문은 연결하지 않습니다. 과적합 부재·수익 우위는 입증되지 않았습니다.
 

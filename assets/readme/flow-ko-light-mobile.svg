@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="690" viewBox="0 0 600 690" role="img" aria-labelledby="title desc">
+<title id="title">ETF 일봉 → Chronos-2 예측 → 전망 · 모의계좌</title><desc id="desc">입력: ETF 일봉 / 처리: Chronos-2 예측 / 출력: 전망 · 모의계좌</desc>
+<rect x="1" y="1" width="598" height="688" rx="20" fill="#F2F5FA" stroke="#CDD8E7"/>
+<text x="46" y="64" fill="#4168D6" font-family="NanumGothic, Noto Sans KR, Arial, sans-serif" font-size="23" font-weight="700">입력</text>
+<text x="46" y="123" fill="#173047" font-family="NanumGothic, Noto Sans KR, Arial, sans-serif" font-size="33" font-weight="700">ETF 일봉</text>
+<path d="M46 192v27m-6-6 6 6 6-6M82 208h472" fill="none" stroke="#CDD8E7" stroke-width="2"/>
+<text x="46" y="279" fill="#4168D6" font-family="NanumGothic, Noto Sans KR, Arial, sans-serif" font-size="23" font-weight="700">처리</text>
+<text x="46" y="338" fill="#173047" font-family="NanumGothic, Noto Sans KR, Arial, sans-serif" font-size="33" font-weight="700">Chronos-2 예측</text>
+<path d="M46 407v27m-6-6 6 6 6-6M82 423h472" fill="none" stroke="#CDD8E7" stroke-width="2"/>
+<text x="46" y="494" fill="#4168D6" font-family="NanumGothic, Noto Sans KR, Arial, sans-serif" font-size="23" font-weight="700">출력</text>
+<text x="46" y="553" fill="#173047" font-family="NanumGothic, Noto Sans KR, Arial, sans-serif" font-size="33" font-weight="700">전망 · 모의계좌</text>
+</svg>

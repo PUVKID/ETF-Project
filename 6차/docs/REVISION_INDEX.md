@@ -1,3 +1,7 @@
+<!-- language-choice:start -->
+🔵 **한국어** · [English overview](../../en/README.md)
+<!-- language-choice:end -->
+
 # 전체 차수
 
 | 차수 | 자료 | 상세 | 직전 비교 |

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="690" viewBox="0 0 600 690" role="img" aria-labelledby="title desc">
+<title id="title">Daily ETF bars → Chronos-2 forecasts → Outlook · paper account</title><desc id="desc">INPUT: Daily ETF bars / PROCESS: Chronos-2 forecasts / OUTPUT: Outlook · paper account</desc>
+<rect x="1" y="1" width="598" height="688" rx="20" fill="#111923" stroke="#33445A"/>
+<text x="46" y="64" fill="#93B3FF" font-family="NanumGothic, Noto Sans KR, Arial, sans-serif" font-size="23" font-weight="700">INPUT</text>
+<text x="46" y="123" fill="#E1EAF4" font-family="NanumGothic, Noto Sans KR, Arial, sans-serif" font-size="33" font-weight="700">Daily ETF bars</text>
+<path d="M46 192v27m-6-6 6 6 6-6M82 208h472" fill="none" stroke="#33445A" stroke-width="2"/>
+<text x="46" y="279" fill="#93B3FF" font-family="NanumGothic, Noto Sans KR, Arial, sans-serif" font-size="23" font-weight="700">PROCESS</text>
+<text x="46" y="338" fill="#E1EAF4" font-family="NanumGothic, Noto Sans KR, Arial, sans-serif" font-size="33" font-weight="700">Chronos-2 forecasts</text>
+<path d="M46 407v27m-6-6 6 6 6-6M82 423h472" fill="none" stroke="#33445A" stroke-width="2"/>
+<text x="46" y="494" fill="#93B3FF" font-family="NanumGothic, Noto Sans KR, Arial, sans-serif" font-size="23" font-weight="700">OUTPUT</text>
+<text x="46" y="553" fill="#E1EAF4" font-family="NanumGothic, Noto Sans KR, Arial, sans-serif" font-size="33" font-weight="700">Outlook · paper account</text>
+</svg>
